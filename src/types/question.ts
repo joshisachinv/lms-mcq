@@ -1,0 +1,20 @@
+export type Question = {
+  id: string;
+  subject: string;
+  topic: string;
+  difficulty: string;
+  questionType: string;
+  questionText: string;
+  questionImage: string;
+  optionA: string;
+  optionAImage: string;
+  optionB: string;
+  optionBImage: string;
+  optionC: string;
+  optionCImage: string;
+  optionD: string;
+  optionDImage: string;
+  correctAnswers: string[];
+  explanation: string;
+  timerSeconds: number;
+};
