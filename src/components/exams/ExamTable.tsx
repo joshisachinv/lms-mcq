@@ -25,6 +25,17 @@ export default function ExamTable() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  const handleShareExam = async (exam: Exam) => {
+  const examUrl = `${window.location.origin}/student/exams/take/${exam.id}`;
+
+    try {
+      await navigator.clipboard.writeText(examUrl);
+      alert(`Exam link copied:\n${examUrl}`);
+    } catch (error) {
+      console.error(error);
+      prompt("Copy link:", examUrl);
+    }
+  };
   const loadExams = async () => {
     try {
       setLoading(true);
@@ -125,84 +136,93 @@ export default function ExamTable() {
         <EmptyState message="No exams match your search or filters." />
       ) : (
         <DataTable
-  data={filteredExams}
-  getRowKey={(exam) => exam.id}
-  columns={[
-    {
-      key: "title",
-      label: "Title",
-      filter: true,
-      sortable: true,
-    },
-    {
-      key: "description",
-      label: "Description",
-      sortable: true,
-    },
-    {
-      key: "questionCount",
-      label: "Questions",
-      filter: true,
-      sortable: true,
-      getValue: (exam) => exam.questionIds.length,
-    },
-    {
-      key: "overallTimerSeconds",
-      label: "Timer",
-      sortable: true,
-      getValue: (exam) => `${exam.overallTimerSeconds}s`,
-    },
-    {
-      key: "status",
-      label: "Status",
-      filter: true,
-      sortable: true,
-      getValue: (exam) => (exam.isActive ? "Active" : "Inactive"),
-      render: (exam) => (
-        <Badge color={exam.isActive ? "green" : "gray"}>
-          {exam.isActive ? "Active" : "Inactive"}
-        </Badge>
-      ),
-    },
-    {
-      key: "actions",
-      label: "Actions",
-      render: (exam) => (
-        <div className="action-row">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => handleToggleActive(exam)}
-          >
-            {exam.isActive ? "Deactivate" : "Activate"}
-          </Button>
+        data={filteredExams}
+        getRowKey={(exam) => exam.id}
+        columns={[
+          {
+            key: "title",
+            label: "Title",
+            filter: true,
+            sortable: true,
+          },
+          {
+            key: "description",
+            label: "Description",
+            sortable: true,
+          },
+          {
+            key: "questionCount",
+            label: "Questions",
+            filter: true,
+            sortable: true,
+            getValue: (exam) => exam.questionIds.length,
+          },
+          {
+            key: "overallTimerSeconds",
+            label: "Timer",
+            sortable: true,
+            getValue: (exam) => `${exam.overallTimerSeconds}s`,
+          },
+          {
+            key: "status",
+            label: "Status",
+            filter: true,
+            sortable: true,
+            getValue: (exam) => (exam.isActive ? "Active" : "Inactive"),
+            render: (exam) => (
+              <Badge color={exam.isActive ? "green" : "gray"}>
+                {exam.isActive ? "Active" : "Inactive"}
+              </Badge>
+            ),
+          },
+          {
+            key: "actions",
+            label: "Actions",
+            render: (exam) => (
+              <div className="action-row">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => handleToggleActive(exam)}
+                >
+                  {exam.isActive ? "Deactivate" : "Activate"}
+                </Button>
 
-          <Link href={`/admin/exams/edit/${exam.id}`}>
-            <Button type="button" variant="secondary">
-              Edit
-            </Button>
-          </Link>
-          
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => handleDuplicate(exam)}
-          >
-            Duplicate
-          </Button>
+                <Link href={`/admin/exams/edit/${exam.id}`}>
+                  <Button type="button" variant="secondary">
+                    Edit
+                  </Button>
+                </Link>
 
-          <Button
-            type="button"
-            variant="danger"
-            onClick={() => handleArchive(exam.id)}
-          >
-            Archive
-          </Button>
-        </div>
-      ),
-    },
-  ]}
-/>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => handleDuplicate(exam)}
+                >
+                  Duplicate
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={!exam.isActive}
+                  onClick={() => handleShareExam(exam)}
+                >
+                  Share Link
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => handleArchive(exam.id)}
+                >
+                  Archive
+                </Button>
+              </div>
+            ),
+          }
+        ]}
+      />
       )}
     </>
   );

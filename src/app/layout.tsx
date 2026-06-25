@@ -1,4 +1,5 @@
 import "../styles/globals.css";
+import "katex/dist/katex.min.css";
 
 export const metadata = {
   title: "LMS MCQ Platform",

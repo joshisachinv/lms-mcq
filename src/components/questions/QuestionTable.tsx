@@ -17,6 +17,7 @@ import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Table from "@/components/ui/Table";
 import DataTable from "@/components/datatable/DataTable";
+import MathText from "../math/MathText";
 
 export default function QuestionTable() {
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -57,7 +58,7 @@ export default function QuestionTable() {
       ${question.topic}
       ${question.difficulty}
       ${question.questionType}
-      ${question.questionText}
+      ${ question.questionText } />
     `.toLowerCase();
 
     const matchesSearch = searchableText.includes(search.toLowerCase());

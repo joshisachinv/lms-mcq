@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { getQuestions, Question } from "@/lib/questionService";
 import { addExam } from "@/lib/examService";
-
+import MathText from "@/components/math/MathText";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import FormSection from "@/components/ui/FormSection";
@@ -54,7 +54,7 @@ export default function CreateExamPage() {
       ${question.subject}
       ${question.topic}
       ${question.difficulty}
-      ${question.questionText}
+      ${question.questionText} />
     `.toLowerCase();
 
     const matchesSearch = searchableText.includes(search.toLowerCase());
@@ -273,7 +273,7 @@ export default function CreateExamPage() {
                       <td>{question.subject}</td>
                       <td>{question.topic}</td>
                       <td>{question.difficulty}</td>
-                      <td>{question.questionText}</td>
+                      <td><MathText text={question.questionText} /></td>
                     </tr>
                   ))}
                 </tbody>

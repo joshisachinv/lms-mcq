@@ -8,7 +8,7 @@ import Card from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
 import PageTitle from "@/components/ui/PageTitle";
 import Table from "@/components/ui/Table";
-
+import MathText from "@/components/math/MathText";
 type Question = {
   id: string;
   subject: string;
@@ -164,7 +164,7 @@ export default function UploadQuestionsPage() {
                 <td>{question.topic}</td>
                 <td>{question.difficulty}</td>
                 <td>{question.questionType}</td>
-                <td>{question.questionText}</td>
+                <td><MathText text={question.questionText} /></td>
                 <td>{question.correctAnswers.join(", ")}</td>
                 <td>{question.timerSeconds}s</td>
               </tr>

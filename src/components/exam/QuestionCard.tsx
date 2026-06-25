@@ -1,5 +1,5 @@
 import { Question } from "@/lib/questionService";
-
+import MathText from "../math/MathText";
 type Props = {
   question: Question;
   questionNumber: number;
@@ -56,7 +56,7 @@ export default function QuestionCard({
         </p>
       )}
 
-      <p className="exam-question-text">{question.questionText}</p>
+      <p className="exam-question-text"><MathText text={question.questionText} /></p>
 
       {hasImage(question.questionImage) && (
         <img src={question.questionImage} alt="Question" className="exam-question-image" />
@@ -92,7 +92,7 @@ export default function QuestionCard({
               />
 
               <div>
-                <strong>{option}.</strong> {optionText}
+                <strong>{option}.</strong> <MathText text={optionText} />
 
                 {hasImage(optionImage) && (
                   <img

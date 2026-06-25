@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getAttemptById } from "@/lib/attemptService";
-
+import MathText from "@/components/math/MathText";
 type Question = {
   id: string;
   subject: string;
@@ -128,7 +128,7 @@ export default function ResultDetailPage() {
             </p>
 
             <p>
-              <strong>Question:</strong> {question.questionText}
+              <strong>Question:</strong> <MathText text={question.questionText} />
             </p>
 
             {hasImage(question.questionImage) && (
@@ -169,7 +169,7 @@ export default function ResultDetailPage() {
                   }}
                 >
                   <div>
-                    <strong>{option}.</strong> {optionText}
+                    <strong>{option}.</strong> <MathText text={optionText} />
                     {studentSelected && " - Student Answer"}
                     {correctSelected && " - Correct Answer"}
                   </div>
