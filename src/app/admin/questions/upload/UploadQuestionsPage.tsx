@@ -97,6 +97,7 @@ export default function UploadQuestionsPage() {
           correctAnswers: question.correctAnswers,
           explanation: question.explanation,
           timerSeconds: question.timerSeconds,
+          isArchived: false,
         });
       }
 
