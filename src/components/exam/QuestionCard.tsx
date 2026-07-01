@@ -1,5 +1,6 @@
 import { Question } from "@/lib/questionService";
 import MathText from "../math/MathText";
+import Button from "@/components/ui/Button";
 type Props = {
   question: Question;
   questionNumber: number;
@@ -11,6 +12,7 @@ type Props = {
   onPrevious: () => void;
   onNext: () => void;
   onSubmit: () => void;
+  onToggleScratchpad: () => void;
   canGoPrevious: boolean;
   canGoNext: boolean;
   submitting: boolean;
@@ -27,6 +29,7 @@ export default function QuestionCard({
   onPrevious,
   onNext,
   onSubmit,
+  onToggleScratchpad,
   canGoPrevious,
   canGoNext,
   submitting,
@@ -45,9 +48,7 @@ export default function QuestionCard({
           </p>
         </div>
 
-        <button type="button" className="secondary-button" onClick={onToggleFlag}>
-          {isFlagged ? "Unflag" : "Flag for Review"}
-        </button>
+      
       </div>
 
       {isLocked && (
@@ -107,33 +108,49 @@ export default function QuestionCard({
         })}
       </div>
 
-      <div className="exam-actions">
-        <button
-          className="secondary-button"
+      <div className="exam-bottom-actions">
+        <Button
           type="button"
+          variant="secondary"
           disabled={!canGoPrevious}
           onClick={onPrevious}
         >
-          Previous
-        </button>
+          ◀ Previous
+        </Button>
 
-        <button
-          className="secondary-button"
+        <Button
           type="button"
+          variant="secondary"
           disabled={!canGoNext}
           onClick={onNext}
         >
-          Next
-        </button>
+          Next ▶
+        </Button>
 
-        <button
-          className="danger-button"
+        <Button
           type="button"
+          variant="primary"
           disabled={submitting}
           onClick={onSubmit}
         >
           {submitting ? "Submitting..." : "Submit Exam"}
-        </button>
+        </Button>
+
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={onToggleScratchpad}
+        >
+          Scratchpad
+        </Button>
+
+        <Button
+          type="button"
+          variant={isFlagged ? "danger" : "secondary"}
+          onClick={onToggleFlag}
+        >
+          {isFlagged ? "🚩 Unflag" : "🚩 Flag"}
+        </Button>
       </div>
     </section>
   );

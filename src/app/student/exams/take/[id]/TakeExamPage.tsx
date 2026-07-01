@@ -1,23 +1,23 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import QuestionCard from "@/components/exam/QuestionCard";
 import ScratchpadPanel from "@/components/exam/ScratchpadPanel";
 import TimerBar from "@/components/exam/TimerBar";
 import ExamHeader from "@/components/exam/ExamHeader";
 import QuestionNavigator from "@/components/exam/QuestionNavigator";
-import { getCurrentUser } from "@/lib/authService";
-import { getExams, Exam } from "@/lib/examService";
-import { getQuestions, Question } from "@/lib/questionService";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { getExamById, Exam } from "@/lib/examService";
+import { getQuestionsByIds, Question } from "@/lib/questionService";
 import { addAttempt } from "@/lib/attemptService";
-import { User } from "@supabase/supabase-js";
+import Dialog from "@/components/ui/Dialog";
 
 export default function TakeExamPage() {
   const params = useParams<{ id: string }>();
   const examId = params.id;
-  const [user, setUser] = useState<User | null>(null);
+  const { user, loading: userLoading } = useAuth();
 
   const [exam, setExam] = useState<Exam | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -27,14 +27,21 @@ export default function TakeExamPage() {
   const [score, setScore] = useState<number | null>(null);
 
   const [scratchpads, setScratchpads] = useState<Record<string, string>>({});
-  const [isScratchpadOpen, setIsScratchpadOpen] = useState(true);
-
+  const [isScratchpadOpen, setIsScratchpadOpen] = useState(false);
+  
+  const [overallTimeSpent, setOverallTimeSpent] = useState(0);
   const [overallTimeLeft, setOverallTimeLeft] = useState(0);
   const [questionTimeLeft, setQuestionTimeLeft] = useState<Record<string, number>>({});
   const [questionTimeSpent, setQuestionTimeSpent] = useState<Record<string, number>>({});
 
   const [flaggedQuestions, setFlaggedQuestions] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+
+  const autosaveKey = useMemo(() => {
+    if (!examId || !user?.id) return "";
+    return `exam-draft:${examId}:${user.id}`;
+  }, [examId, user?.id]);
 
   const currentQuestion =
     currentIndex >= 0 && currentIndex < questions.length
@@ -46,7 +53,14 @@ export default function TakeExamPage() {
   ).length;
   
   const shuffleQuestions = (items: Question[]) => {
-    return [...items].sort(() => Math.random() - 0.5);
+    const shuffled = [...items];
+
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    return shuffled;
   };
   
   const progressPercent =
@@ -55,28 +69,26 @@ export default function TakeExamPage() {
       : 0;
 
   useEffect(() => {
+    if (userLoading) return;
+
+    if (!user) {
+      alert("Please log in again.");
+      return;
+    }
+
     const loadExam = async () => {
       try {
-          const currentUser = await getCurrentUser();
+        const foundExam = await getExamById(examId);
+        const examQuestionsUnordered = await getQuestionsByIds(
+          foundExam.questionIds
+        );
 
-          if (!currentUser) {
-              alert("Please log in again.");
-              return;
-          }
-
-          setUser(currentUser);
-        
-        const exams = await getExams();
-        const allQuestions = await getQuestions();
-
-        const foundExam = exams.find((e) => e.id === examId);
-
-        if (!foundExam) return;
+        const questionsById = new Map(
+          examQuestionsUnordered.map((question) => [question.id, question])
+        );
 
         let examQuestions = foundExam.questionIds
-          .map((questionId) =>
-            allQuestions.find((question) => question.id === questionId)
-          )
+          .map((questionId) => questionsById.get(questionId))
           .filter(Boolean) as Question[];
 
         if (foundExam.randomizeQuestions) {
@@ -91,11 +103,29 @@ export default function TakeExamPage() {
           initialQuestionTimeSpent[question.id] = 0;
         });
 
+        let savedDraft: any = null;
+
+        if (typeof window !== "undefined" && user?.id) {
+          const savedValue = window.localStorage.getItem(`exam-draft:${examId}:${user.id}`);
+          if (savedValue) {
+            try {
+              savedDraft = JSON.parse(savedValue);
+            } catch {
+              savedDraft = null;
+            }
+          }
+        }
+
         setExam(foundExam);
         setQuestions(examQuestions);
-        setOverallTimeLeft(foundExam.overallTimerSeconds || 1800);
-        setQuestionTimeLeft(initialQuestionTimeLeft);
-        setQuestionTimeSpent(initialQuestionTimeSpent);
+        setAnswers(savedDraft?.answers || {});
+        setScratchpads(savedDraft?.scratchpads || {});
+        setFlaggedQuestions(savedDraft?.flaggedQuestions || {});
+        setCurrentIndex(savedDraft?.currentIndex || 0);
+        setOverallTimeSpent(savedDraft?.overallTimeSpent || 0);
+        setOverallTimeLeft(savedDraft?.overallTimeLeft ?? foundExam.overallTimerSeconds ?? 1800);
+        setQuestionTimeLeft(savedDraft?.questionTimeLeft || initialQuestionTimeLeft);
+        setQuestionTimeSpent(savedDraft?.questionTimeSpent || initialQuestionTimeSpent);
       } catch (error) {
         console.error(error);
         alert("Failed to load exam.");
@@ -103,21 +133,25 @@ export default function TakeExamPage() {
     };
 
     loadExam();
-  }, [examId]);
+  }, [examId, user, userLoading]);
 
   useEffect(() => {
     if (!exam || score !== null) return;
 
     const timer = setInterval(() => {
-      setOverallTimeLeft((previous) => {
-        if (previous <= 1) {
-          clearInterval(timer);
-          void submitExam(true);
-          return 0;
-        }
+      setOverallTimeSpent((previous) => previous + 1);
 
-        return previous - 1;
-      });
+      if (exam.isTimed) {
+        setOverallTimeLeft((previous) => {
+          if (previous <= 1) {
+            clearInterval(timer);
+            void submitExam(true);
+            return 0;
+          }
+
+          return previous - 1;
+        });
+      }
     }, 1000);
 
     return () => clearInterval(timer);
@@ -135,29 +169,62 @@ export default function TakeExamPage() {
           return previous;
         }
 
+        setQuestionTimeSpent((previousSpent) => ({
+          ...previousSpent,
+          [currentQuestion.id]: (previousSpent[currentQuestion.id] || 0) + 1,
+        }));
+
         return {
           ...previous,
           [currentQuestion.id]: currentLeft - 1,
         };
       });
-
-      setQuestionTimeSpent((previous) => {
-        const currentLeft =
-          questionTimeLeft[currentQuestion.id] ??
-          currentQuestion.timerSeconds ??
-          60;
-
-        if (currentLeft <= 0) return previous;
-
-        return {
-          ...previous,
-          [currentQuestion.id]: (previous[currentQuestion.id] || 0) + 1,
-        };
-      });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [currentQuestion, score, questionTimeLeft]);
+  }, [currentQuestion, score]);
+
+  useEffect(() => {
+    if (!autosaveKey || !exam || score !== null) return;
+
+    const draft = {
+      answers,
+      scratchpads,
+      flaggedQuestions,
+      currentIndex,
+      overallTimeSpent,
+      overallTimeLeft,
+      questionTimeLeft,
+      questionTimeSpent,
+      savedAt: new Date().toISOString(),
+    };
+
+    window.localStorage.setItem(autosaveKey, JSON.stringify(draft));
+  }, [
+    autosaveKey,
+    exam,
+    score,
+    answers,
+    scratchpads,
+    flaggedQuestions,
+    currentIndex,
+    overallTimeSpent,
+    overallTimeLeft,
+    questionTimeLeft,
+    questionTimeSpent,
+  ]);
+
+  useEffect(() => {
+    if (!exam || score !== null) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [exam, score]);
 
   const formatTime = (seconds: number) => {
     const safeSeconds = Math.max(0, seconds);
@@ -211,14 +278,11 @@ export default function TakeExamPage() {
     if (!exam || !user || submitting) return;
 
     if (!skipConfirm) {
-      const confirmed = confirm(
-        `Submit exam now?\n\nAnswered: ${answeredCount} / ${questions.length}\nFlagged: ${
-          Object.values(flaggedQuestions).filter(Boolean).length
-        }`
-      );
-
-      if (!confirmed) return;
+      setShowSubmitDialog(true);
+      return;
     }
+
+    setShowSubmitDialog(false);
 
     setSubmitting(true);
 
@@ -246,9 +310,14 @@ export default function TakeExamPage() {
         scratchpads,
         questionTimeSpent,
         questionTimeLeft,
-        overallTimeLeft,
+        overallTimeLeft: exam.isTimed ? overallTimeLeft : 0,
+        overallTimeSpent,
         questionsSnapshot: questions,
       });
+
+      if (autosaveKey) {
+        window.localStorage.removeItem(autosaveKey);
+      }
 
       setScore(total);
     } catch (error) {
@@ -298,16 +367,24 @@ export default function TakeExamPage() {
   const currentQuestionTimeLeft =
     questionTimeLeft[currentQuestion.id] ?? currentQuestion.timerSeconds ?? 60;
 
-  const isCurrentQuestionLocked = currentQuestionTimeLeft <= 0;
+  const currentQuestionTimeDisplay = exam.isTimed
+    ? currentQuestionTimeLeft
+    : questionTimeSpent[currentQuestion.id] || 0;
+    
+  const isCurrentQuestionLocked =
+    exam.isTimed && currentQuestionTimeLeft <= 0;
 
   return (
-    <main className="exam-page">
+    <main className="exam-shell">
       <TimerBar
-        examTitle={exam.title}
+        subject={currentQuestion.subject || exam.title}
         questionNumber={currentIndex + 1}
         totalQuestions={questions.length}
-        overallTime={formatTime(overallTimeLeft)}
-        questionTime={formatTime(currentQuestionTimeLeft)}
+        overallTime={formatTime(exam.isTimed ? overallTimeLeft : overallTimeSpent)}
+        questionTime={formatTime(currentQuestionTimeDisplay)}
+        isTimed={exam.isTimed}
+        isOverallLow={exam.isTimed && overallTimeLeft > 0 && overallTimeLeft <= 120}
+        isQuestionLow={exam.isTimed && currentQuestionTimeLeft > 0 && currentQuestionTimeLeft <= 15}
       />
 
       <ExamHeader
@@ -316,7 +393,46 @@ export default function TakeExamPage() {
         progressPercent={progressPercent}
       />
 
-      <div className="exam-layout">
+      <div className="exam-main-layout">
+        <section className="exam-main-question">
+          <QuestionCard
+            question={currentQuestion}
+            questionNumber={currentIndex + 1}
+            selectedAnswers={answers[currentQuestion.id] || []}
+            isLocked={isCurrentQuestionLocked}
+            isFlagged={Boolean(flaggedQuestions[currentQuestion.id])}
+            onToggleAnswer={toggleAnswer}
+            onToggleFlag={toggleFlag}
+            onPrevious={() => setCurrentIndex(currentIndex - 1)}
+            onNext={() => setCurrentIndex(currentIndex + 1)}
+            onSubmit={() => void submitExam(false)}
+            onToggleScratchpad={() =>
+              setIsScratchpadOpen((current) => !current)
+            }
+            canGoPrevious={currentIndex > 0}
+            canGoNext={currentIndex < questions.length - 1}
+            submitting={submitting}
+          />
+
+          {isScratchpadOpen && (
+          <div className="exam-inline-scratchpad">
+            <ScratchpadPanel
+              questionId={currentQuestion.id}
+              value={scratchpads[currentQuestion.id] || ""}
+              isOpen={isScratchpadOpen}
+              onToggleOpen={() => setIsScratchpadOpen(false)}
+              onChange={(value) =>
+                setScratchpads((previous) => ({
+                  ...previous,
+                  [currentQuestion.id]: value,
+                }))
+              }
+            />
+          </div>
+        )}
+
+        </section>
+
         <QuestionNavigator
           questions={questions}
           currentIndex={currentIndex}
@@ -325,36 +441,25 @@ export default function TakeExamPage() {
           questionTimeLeft={questionTimeLeft}
           onSelectQuestion={setCurrentIndex}
         />
-
-              <QuestionCard
-                  question={currentQuestion}
-                  questionNumber={currentIndex + 1}
-                  selectedAnswers={answers[currentQuestion.id] || []}
-                  isLocked={isCurrentQuestionLocked}
-                  isFlagged={Boolean(flaggedQuestions[currentQuestion.id])}
-                  onToggleAnswer={toggleAnswer}
-                  onToggleFlag={toggleFlag}
-                  onPrevious={() => setCurrentIndex(currentIndex - 1)}
-                  onNext={() => setCurrentIndex(currentIndex + 1)}
-                  onSubmit={() => void submitExam(false)}
-                  canGoPrevious={currentIndex > 0}
-                  canGoNext={currentIndex < questions.length - 1}
-                  submitting={submitting}
-              />
-
-              <ScratchpadPanel
-                  questionId={currentQuestion.id}
-                  value={scratchpads[currentQuestion.id] || ""}
-                  isOpen={isScratchpadOpen}
-                  onToggleOpen={() => setIsScratchpadOpen((current) => !current)}
-                  onChange={(value) =>
-                      setScratchpads((previous) => ({
-                          ...previous,
-                          [currentQuestion.id]: value,
-                      }))
-                  }
-              />
       </div>
+
+
+
+      <Dialog
+        open={showSubmitDialog}
+        title="Submit exam?"
+        description="Please confirm before submitting. You will not be able to change your answers after submission."
+        confirmLabel={submitting ? "Submitting..." : "Submit exam"}
+        cancelLabel="Continue exam"
+        onCancel={() => setShowSubmitDialog(false)}
+        onConfirm={() => void submitExam(true)}
+      >
+        <div className="submit-confirm-summary">
+          <div><strong>{answeredCount}</strong><span>Answered</span></div>
+          <div><strong>{questions.length - answeredCount}</strong><span>Unanswered</span></div>
+          <div><strong>{Object.values(flaggedQuestions).filter(Boolean).length}</strong><span>Flagged</span></div>
+        </div>
+      </Dialog>
     </main>
   );
 }

@@ -227,10 +227,14 @@ export default function ResultDetailPage() {
               <p>No scratchpad used for this question.</p>
             )}
             
-            <p>
+            <div className="explanation">
               <strong>Explanation:</strong>{" "}
-              {question.explanation || "No explanation provided."}
-            </p>
+              {question.explanation ? (
+                <MathText text={question.explanation} />
+              ) : (
+                "No explanation provided."
+              )}
+            </div>
           </div>
         );
       })}

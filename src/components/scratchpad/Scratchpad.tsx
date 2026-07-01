@@ -46,31 +46,36 @@ export default function Scratchpad({ value, onChange }: Props) {
 
   const getPosition = (
     event:
-      | React.MouseEvent<HTMLCanvasElement>
-      | React.TouchEvent<HTMLCanvasElement>
+      React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>,
   ) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
 
-    if ("touches" in event) {
-      return {
-        x: event.touches[0].clientX - rect.left,
-        y: event.touches[0].clientY - rect.top,
-      };
+    let clientX = 0;
+    let clientY = 0;
+
+    if ("touches" in event && event.touches.length > 0) {
+      clientX = event.touches[0].clientX;
+      clientY = event.touches[0].clientY;
+    } else if ("clientX" in event) {
+      clientX = event.clientX;
+      clientY = event.clientY;
     }
 
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
     return {
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY,
     };
   };
 
   const startDrawing = (
     event:
-      | React.MouseEvent<HTMLCanvasElement>
-      | React.TouchEvent<HTMLCanvasElement>
+      React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>,
   ) => {
     event.preventDefault();
 
@@ -88,8 +93,7 @@ export default function Scratchpad({ value, onChange }: Props) {
 
   const draw = (
     event:
-      | React.MouseEvent<HTMLCanvasElement>
-      | React.TouchEvent<HTMLCanvasElement>
+      React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>,
   ) => {
     if (!isDrawing) return;
 
@@ -130,22 +134,23 @@ export default function Scratchpad({ value, onChange }: Props) {
   };
 
   return (
-    <div
-      style={{
-        width: "380px",
-        border: "1px solid #ccc",
-        padding: "10px",
-        background: "#f9f9f9",
-      }}
-    >
-      <h3>Scratchpad</h3>
+    <div className="scratchpad-box">
+      <h3 className="scratchpad-title">Scratchpad</h3>
 
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "10px" }}>
-        <button type="button" onClick={() => setTool("pencil")}>
+      <div className="scratchpad-toolbar">
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => setTool("pencil")}
+        >
           Pencil
         </button>
 
-        <button type="button" onClick={() => setTool("eraser")}>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => setTool("eraser")}
+        >
           Eraser
         </button>
 
@@ -166,20 +171,18 @@ export default function Scratchpad({ value, onChange }: Props) {
           <option value={8}>Thick</option>
         </select>
 
-        <button type="button" onClick={clearCanvas}>
+        <button type="button" className="danger-button" onClick={clearCanvas}>
           Clear
         </button>
       </div>
 
       <canvas
         ref={canvasRef}
-        width={350}
+        width={1200}
         height={450}
+        className="scratchpad-canvas"
         style={{
-          border: "1px solid #999",
-          background: "#ffffff",
-          touchAction: "none",
-          cursor: tool === "eraser" ? "cell" : "crosshair",
+          cursor: tool === "pencil" ? "crosshair" : "cell",
         }}
         onMouseDown={startDrawing}
         onMouseMove={draw}

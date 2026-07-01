@@ -1,7 +1,15 @@
-import React from "react";
+import type { ButtonHTMLAttributes } from "react";
 
-type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "danger";
+type Variant = "primary" | "secondary" | "danger";
+
+type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: Variant;
+};
+
+const VARIANT_CLASSES: Record<Variant, string> = {
+  primary: "primary-button",
+  secondary: "secondary-button",
+  danger: "danger-button",
 };
 
 export default function Button({
@@ -10,15 +18,8 @@ export default function Button({
   children,
   ...props
 }: Props) {
-  const variantClass =
-    variant === "primary"
-      ? "primary-button"
-      : variant === "danger"
-      ? "danger-button"
-      : "secondary-button";
-
   return (
-    <button className={`${variantClass} ${className}`} {...props}>
+    <button className={`${VARIANT_CLASSES[variant]} ${className}`.trim()} {...props}>
       {children}
     </button>
   );

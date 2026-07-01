@@ -2,7 +2,7 @@ import QuestionForm from "@/components/questions/QuestionForm";
 
 export default function AddQuestionPage() {
   return (
-    <main style={{ padding: "40px" }}>
+    <main className="page-container">
       <QuestionForm />
     </main>
   );

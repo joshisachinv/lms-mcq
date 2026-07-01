@@ -91,7 +91,7 @@ export default function DataTable<T>({
 
   return (
     <div className="table-card">
-      <div style={{ marginBottom: "12px", fontWeight: 600 }}>
+      <div className="table-summary">
         Showing {filteredData.length} of {data.length}
       </div>
 
@@ -103,13 +103,8 @@ export default function DataTable<T>({
                 <button
                   type="button"
                   onClick={() => toggleSort(column)}
-                  style={{
-                    border: "none",
-                    background: "transparent",
-                    fontWeight: 700,
-                    cursor: column.sortable ? "pointer" : "default",
-                    padding: 0,
-                  }}
+                  className="table-sort-button"
+                  disabled={!column.sortable}
                 >
                   {column.label}
                   {sortKey === String(column.key)
@@ -128,14 +123,7 @@ export default function DataTable<T>({
                         [String(column.key)]: e.target.value,
                       }))
                     }
-                    style={{
-                      display: "block",
-                      marginTop: "6px",
-                      width: "100%",
-                      padding: "6px",
-                      borderRadius: "6px",
-                      border: "1px solid #d1d5db",
-                    }}
+                    className="table-filter-select"
                   >
                     <option value="">All</option>
                     {uniqueValues(column).map((value) => (

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentUser } from "@/lib/authService";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function RequireAuth({
   children,
@@ -10,24 +10,15 @@ export default function RequireAuth({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [checking, setChecking] = useState(true);
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    const checkUser = async () => {
-      const user = await getCurrentUser();
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [loading, user, router]);
 
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-
-      setChecking(false);
-    };
-
-    checkUser();
-  }, [router]);
-
-  if (checking) {
+  if (loading || !user) {
     return <p style={{ padding: "40px" }}>Checking login...</p>;
   }
 

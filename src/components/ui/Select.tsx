@@ -1,6 +1,8 @@
-type Props = React.SelectHTMLAttributes<HTMLSelectElement> & {
+import type { ReactNode, SelectHTMLAttributes } from "react";
+
+type Props = SelectHTMLAttributes<HTMLSelectElement> & {
   label?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 };
 
 export default function Select({ label, children, className = "", ...props }: Props) {

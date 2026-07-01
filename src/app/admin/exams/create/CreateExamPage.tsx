@@ -26,6 +26,7 @@ export default function CreateExamPage() {
   const [subjectFilter, setSubjectFilter] = useState("");
   const [topicFilter, setTopicFilter] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("");
+  const [isTimed, setIsTimed] = useState(true);
 
   useEffect(() => {
     const loadQuestions = async () => {
@@ -114,6 +115,7 @@ export default function CreateExamPage() {
         overallTimerSeconds,
         isActive: false,
         isArchived: false,
+        isTimed,
         questionIds: selectedQuestions,
         randomizeQuestions,
       });
@@ -127,6 +129,7 @@ export default function CreateExamPage() {
       setSubjectFilter("");
       setTopicFilter("");
       setDifficultyFilter("");
+      setIsTimed(true);
     } catch (error) {
       console.error(error);
       alert("Failed to create exam.");

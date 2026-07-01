@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Exam, getExams } from "@/lib/examService";
+import EmptyState from "@/components/ui/EmptyState";
+import PageTitle from "@/components/ui/PageTitle";
+import Table from "@/components/ui/Table";
 
 export default function StudentExamsPage() {
   const [activeExams, setActiveExams] = useState<Exam[]>([]);
@@ -26,22 +29,23 @@ export default function StudentExamsPage() {
 
   if (loading) {
     return (
-      <main style={{ padding: "40px" }}>
-        <h1>Available Exams</h1>
-        <p>Loading exams...</p>
+      <main className="page-container">
+        <PageTitle title="Available Exams" subtitle="Loading active exams..." />
       </main>
     );
   }
 
   return (
-    <main style={{ padding: "40px" }}>
-      <h1>Available Exams</h1>
+    <main className="page-container">
+      <PageTitle
+        title="Available Exams"
+        subtitle="Choose an active exam to begin."
+      />
 
       {activeExams.length === 0 ? (
-        <p>No active exams available.</p>
+        <EmptyState message="No active exams available." />
       ) : (
-        <div className="table-card">
-          <table className="data-table">
+        <Table>
           <thead>
             <tr>
               <th>Exam</th>
@@ -60,15 +64,17 @@ export default function StudentExamsPage() {
                 <td>{exam.questionIds.length}</td>
                 <td>{exam.overallTimerSeconds}s</td>
                 <td>
-                  <Link href={`/student/exams/take/${exam.id}`}>
+                  <Link
+                    className="primary-button"
+                    href={`/student/exams/take/${exam.id}`}
+                  >
                     Take Exam
                   </Link>
                 </td>
               </tr>
             ))}
           </tbody>
-          </table>
-        </div>
+        </Table>
       )}
     </main>
   );

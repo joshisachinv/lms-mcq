@@ -18,7 +18,7 @@ export default function QuestionNavigator({
   onSelectQuestion,
 }: Props) {
   return (
-    <aside className="exam-sidebar">
+    <aside className="exam-right-navigator">
       <h3>Questions</h3>
 
       <div className="exam-question-grid">

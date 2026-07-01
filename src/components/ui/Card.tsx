@@ -1,22 +1,7 @@
-import React from "react";
+import type { HTMLAttributes, PropsWithChildren } from "react";
 
-type Props = {
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-};
+type Props = PropsWithChildren<HTMLAttributes<HTMLDivElement>>;
 
-export default function Card({
-  children,
-  className = "",
-  style,
-}: Props) {
-  return (
-    <div
-      className={`dashboard-card ${className}`}
-      style={style}
-    >
-      {children}
-    </div>
-  );
+export default function Card({ className = "", ...props }: Props) {
+  return <div className={`dashboard-card ${className}`.trim()} {...props} />;
 }

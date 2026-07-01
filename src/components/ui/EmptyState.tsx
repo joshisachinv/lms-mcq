@@ -3,5 +3,5 @@ type Props = {
 };
 
 export default function EmptyState({ message }: Props) {
-  return <p>{message}</p>;
+  return <p className="empty-state">{message}</p>;
 }

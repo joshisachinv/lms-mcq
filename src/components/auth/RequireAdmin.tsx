@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentUser, getUserRole } from "@/lib/authService";
+import { getUserRole } from "@/lib/authService";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function RequireAdmin({
   children,
@@ -10,31 +11,46 @@ export default function RequireAdmin({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [checking, setChecking] = useState(true);
+  const { user, loading } = useAuth();
+  const [checkingRole, setCheckingRole] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const checkAdmin = async () => {
-      const user = await getCurrentUser();
+    if (loading) return;
 
-      if (!user) {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    let isMounted = true;
+
+    getUserRole(user.id)
+      .then((role) => {
+        if (!isMounted) return;
+
+        if (role !== "admin") {
+          // No profile row, or a non-admin role: not authorized here.
+          router.push("/student");
+          return;
+        }
+
+        setIsAdmin(true);
+        setCheckingRole(false);
+      })
+      .catch((error) => {
+        if (!isMounted) return;
+
+        console.error("Failed to check admin access:", error);
         router.push("/login");
-        return;
-      }
+      });
 
-      const role = await getUserRole(user.id);
-
-      if (role !== "admin") {
-        router.push("/student");
-        return;
-      }
-
-      setChecking(false);
+    return () => {
+      isMounted = false;
     };
+  }, [loading, user, router]);
 
-    checkAdmin();
-  }, [router]);
-
-  if (checking) {
+  if (loading || checkingRole || !isAdmin) {
     return <p style={{ padding: "40px" }}>Checking admin access...</p>;
   }
 

@@ -1,4 +1,6 @@
-type Props = React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
+import type { TextareaHTMLAttributes } from "react";
+
+type Props = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   label?: string;
 };
 

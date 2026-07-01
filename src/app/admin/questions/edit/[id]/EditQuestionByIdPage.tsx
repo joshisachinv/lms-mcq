@@ -10,9 +10,10 @@ import Input from "@/components/ui/Input";
 import PageTitle from "@/components/ui/PageTitle";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
+import MathText from "@/components/math/MathText";
 
 import {
-  getQuestions,
+  getQuestionById,
   updateQuestion,
   Question,
 } from "@/lib/questionService";
@@ -27,19 +28,16 @@ export default function EditQuestionPage() {
   useEffect(() => {
     const loadQuestion = async () => {
       try {
-        const questions = await getQuestions();
-        const foundQuestion = questions.find((q) => q.id === id);
+        const foundQuestion = await getQuestionById(id);
 
-        if (foundQuestion) {
-          setQuestion({
-            ...foundQuestion,
-            questionImage: foundQuestion.questionImage || "",
-            optionAImage: foundQuestion.optionAImage || "",
-            optionBImage: foundQuestion.optionBImage || "",
-            optionCImage: foundQuestion.optionCImage || "",
-            optionDImage: foundQuestion.optionDImage || "",
-          });
-        }
+        setQuestion({
+          ...foundQuestion,
+          questionImage: foundQuestion.questionImage || "",
+          optionAImage: foundQuestion.optionAImage || "",
+          optionBImage: foundQuestion.optionBImage || "",
+          optionCImage: foundQuestion.optionCImage || "",
+          optionDImage: foundQuestion.optionDImage || "",
+        });
       } catch (error) {
         console.error(error);
         alert("Failed to load question.");
@@ -310,9 +308,18 @@ export default function EditQuestionPage() {
               <Textarea
                 label="Explanation"
                 rows={4}
-                value={question.explanation}
+                value={question.explanation ?? ""}
                 onChange={(e) => updateField("explanation", e.target.value)}
               />
+
+              <div className="math-preview">
+                <strong>Preview:</strong>{" "}
+                {question.explanation ? (
+                  <MathText text={question.explanation} />
+                ) : (
+                  "No explanation provided."
+                )}
+              </div>
 
               <Input
                 label="Question Timer Seconds"

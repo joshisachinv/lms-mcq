@@ -9,6 +9,7 @@ export type Exam = {
   questionIds: string[];
   isArchived: boolean;
   randomizeQuestions: boolean;
+  isTimed: boolean;
 };
 
 const fromDb = (row: any): Exam => ({
@@ -23,6 +24,7 @@ const fromDb = (row: any): Exam => ({
     row.exam_questions
       ?.sort((a: any, b: any) => a.display_order - b.display_order)
       .map((item: any) => item.question_id) || [],
+  isTimed: row.is_timed ?? true,
 });
 
 export async function getExams(includeArchived = false) {
@@ -42,6 +44,18 @@ export async function getExams(includeArchived = false) {
   return (data || []).map(fromDb);
 }
 
+export async function getExamById(id: string) {
+  const { data, error } = await supabase
+    .from("exams")
+    .select("*, exam_questions(question_id, display_order)")
+    .eq("id", id)
+    .single();
+
+  if (error) throw error;
+
+  return fromDb(data);
+}
+
 export async function addExam(input: Omit<Exam, "id">) {
   const { data: exam, error } = await supabase
     .from("exams")
@@ -52,6 +66,7 @@ export async function addExam(input: Omit<Exam, "id">) {
       is_active: input.isActive,
       is_archived: input.isArchived,
       randomize_questions: input.randomizeQuestions,
+      is_timed: input.isTimed,
     })
     .select()
     .single();
@@ -117,6 +132,7 @@ export async function duplicateExam(exam: Exam) {
     isArchived: false,
     questionIds: exam.questionIds,
     randomizeQuestions: exam.randomizeQuestions,
+    isTimed: exam.isTimed,
   });
 }
 export async function updateExam(input: Exam) {
@@ -129,6 +145,7 @@ export async function updateExam(input: Exam) {
       is_active: input.isActive,
       is_archived: input.isArchived,
       randomize_questions: input.randomizeQuestions,
+      is_timed: input.isTimed,
     })
     .eq("id", input.id);
 

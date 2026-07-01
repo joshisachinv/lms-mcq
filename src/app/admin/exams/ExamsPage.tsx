@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import Button from "@/components/ui/Button";
 import PageTitle from "@/components/ui/PageTitle";
-import ExamTable from "@/components/exams/ExamTable";
+import ExamTable from "@/components/exam/ExamTable";
 
 export default function AdminExamsPage() {
   return (

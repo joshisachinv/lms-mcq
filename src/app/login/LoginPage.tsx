@@ -15,43 +15,31 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
 
   const login = async () => {
-    const { data, error } = await signIn(email, password);
+    try {
+      const { data, error } = await signIn(email, password);
 
-    if (error || !data.user) {
-      alert("Login failed.");
-      return;
-    }
+      if (error || !data.user) {
+        alert("Login failed.");
+        return;
+      }
 
-    const role = await getUserRole(data.user.id);
+      const role = await getUserRole(data.user.id);
 
-    if (role === "admin") {
-      router.push("/admin");
-    } else {
-      router.push("/student");
+      if (role === "admin") {
+        router.push("/admin");
+      } else {
+        router.push("/student");
+      }
+    } catch (error) {
+      console.error("Login failed:", error);
+      alert("Login failed. Please try again.");
     }
   };
 
   return (
-    <main
-      className="page-container"
-      style={{
-        minHeight: "80vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Card
-        className="form-card"
-        style={{
-          width: "100%",
-          maxWidth: "450px",
-        }}
-      >
-        <PageTitle
-          title="LMS MCQ"
-          subtitle="Sign in to continue"
-        />
+    <main className="login-page">
+      <Card className="form-card login-card">
+        <PageTitle title="LMS MCQ" subtitle="Sign in to continue" />
 
         <div className="form-grid">
           <Input
@@ -75,10 +63,7 @@ export default function LoginPage() {
             }}
           />
 
-          <Button
-            type="button"
-            onClick={login}
-          >
+          <Button type="button" onClick={login}>
             Login
           </Button>
         </div>

@@ -82,6 +82,31 @@ export async function getQuestions(includeArchived = false) {
   return (data || []).map(fromDb);
 }
 
+export async function getQuestionById(id: string) {
+  const { data, error } = await supabase
+    .from("questions")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) throw error;
+
+  return fromDb(data);
+}
+
+export async function getQuestionsByIds(ids: string[]) {
+  if (ids.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from("questions")
+    .select("*")
+    .in("id", ids);
+
+  if (error) throw error;
+
+  return (data || []).map(fromDb);
+}
+
 export async function addQuestion(question: Omit<Question, "id">) {
   const { data, error } = await supabase
     .from("questions")

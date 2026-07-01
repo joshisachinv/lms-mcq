@@ -1,13 +1,14 @@
+import type { ReactNode } from "react";
+
 type Props = {
-  children: React.ReactNode;
+  children: ReactNode;
+  className?: string;
 };
 
-export default function Table({ children }: Props) {
+export default function Table({ children, className = "" }: Props) {
   return (
-    <div className="table-card">
-      <table className="data-table">
-        {children}
-      </table>
+    <div className={`table-card ${className}`.trim()}>
+      <table className="data-table">{children}</table>
     </div>
   );
 }

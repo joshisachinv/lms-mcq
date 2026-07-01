@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getAttempts, Attempt } from "@/lib/attemptService";
+import { getAttemptsForStudent, Attempt } from "@/lib/attemptService";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -11,12 +12,15 @@ import PageTitle from "@/components/ui/PageTitle";
 import Table from "@/components/ui/Table";
 
 export default function StudentResultsPage() {
+  const { user, loading: userLoading } = useAuth();
   const [attempts, setAttempts] = useState<Attempt[]>([]);
 
   useEffect(() => {
+    if (userLoading || !user) return;
+
     const loadAttempts = async () => {
       try {
-        const data = await getAttempts();
+        const data = await getAttemptsForStudent(user.id);
         setAttempts(data);
       } catch (error) {
         console.error(error);
@@ -25,7 +29,7 @@ export default function StudentResultsPage() {
     };
 
     loadAttempts();
-  }, []);
+  }, [user, userLoading]);
 
   return (
     <main className="page-container">

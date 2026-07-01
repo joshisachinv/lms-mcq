@@ -1,4 +1,6 @@
-type Props = React.InputHTMLAttributes<HTMLInputElement> & {
+import type { InputHTMLAttributes } from "react";
+
+type Props = InputHTMLAttributes<HTMLInputElement> & {
   label?: string;
 };
 

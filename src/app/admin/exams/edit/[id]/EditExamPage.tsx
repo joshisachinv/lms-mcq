@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
-import { getExams, updateExam, Exam } from "@/lib/examService";
+import { getExamById, updateExam, Exam } from "@/lib/examService";
 import { getQuestions, Question } from "@/lib/questionService";
 
 import Button from "@/components/ui/Button";
@@ -28,20 +28,15 @@ export default function EditExamPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const exams = await getExams(true);
-        const foundExam = exams.find((item) => item.id === examId);
-
-        if (!foundExam) {
-          setExam(null);
-          return;
-        }
-
         const questionData = await getQuestions();
+        const foundExam = await getExamById(examId);
+
         setExam(foundExam);
         setQuestions(questionData);
       } catch (error) {
         console.error(error);
         alert("Failed to load exam.");
+        setExam(null);
       }
     };
 
@@ -176,6 +171,15 @@ export default function EditExamPage() {
               >
                 <option value="no">No - Use manual order</option>
                 <option value="yes">Yes - Randomize for student</option>
+              </Select>
+
+              <Select
+                label="Timing Mode"
+                value={exam.isTimed ? "timed" : "untimed"}
+                onChange={(e) => updateField("isTimed", e.target.value === "timed")}
+              >
+                <option value="timed">Timed - enforce time limits</option>
+                <option value="untimed">Untimed - track time only</option>
               </Select>
             </div>
           </FormSection>

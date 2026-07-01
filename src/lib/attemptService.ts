@@ -16,6 +16,7 @@ export type Attempt = {
   questionTimeLeft: Record<string, number>;
   overallTimeLeft: number;
   questionsSnapshot: Question[];
+  overallTimeSpent: number;
 };
 
 const fromDb = (row: any): Attempt => ({
@@ -33,6 +34,7 @@ const fromDb = (row: any): Attempt => ({
   questionTimeLeft: row.question_time_left || {},
   overallTimeLeft: row.overall_time_left || 0,
   questionsSnapshot: row.questions_snapshot || [],
+  overallTimeSpent: row.overall_time_spent || 0,
 });
 
 export async function addAttempt(
@@ -50,6 +52,7 @@ export async function addAttempt(
       scratchpads: input.scratchpads,
       question_time_spent: input.questionTimeSpent,
       question_time_left: input.questionTimeLeft,
+      overall_time_spent: input.overallTimeSpent,
       overall_time_left: input.overallTimeLeft,
       questions_snapshot: input.questionsSnapshot,
     })
@@ -65,6 +68,18 @@ export async function getAttempts() {
   const { data, error } = await supabase
     .from("attempts")
     .select("*, profiles(full_name, email)")
+    .order("submitted_at", { ascending: false });
+
+  if (error) throw error;
+
+  return (data || []).map(fromDb);
+}
+
+export async function getAttemptsForStudent(studentId: string) {
+  const { data, error } = await supabase
+    .from("attempts")
+    .select("*, profiles(full_name, email)")
+    .eq("student_id", studentId)
     .order("submitted_at", { ascending: false });
 
   if (error) throw error;

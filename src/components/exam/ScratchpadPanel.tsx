@@ -1,4 +1,5 @@
 import Scratchpad from "@/components/scratchpad/Scratchpad";
+import Button from "@/components/ui/Button";
 
 type Props = {
   questionId: string;
@@ -15,23 +16,19 @@ export default function ScratchpadPanel({
   onToggleOpen,
   onChange,
 }: Props) {
+  if (!isOpen) return null;
+
   return (
-    <aside className="exam-scratchpad-panel">
+    <section className="exam-scratchpad-panel">
       <div className="exam-scratchpad-header">
         <h3>Scratchpad</h3>
 
-        <button type="button" className="secondary-button" onClick={onToggleOpen}>
-          {isOpen ? "Hide" : "Show"}
-        </button>
+        <Button type="button" variant="secondary" onClick={onToggleOpen}>
+          Hide
+        </Button>
       </div>
 
-      {isOpen && (
-        <Scratchpad
-          key={questionId}
-          value={value}
-          onChange={onChange}
-        />
-      )}
-    </aside>
+      <Scratchpad key={questionId} value={value} onChange={onChange} />
+    </section>
   );
 }
