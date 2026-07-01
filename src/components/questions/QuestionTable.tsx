@@ -58,7 +58,7 @@ export default function QuestionTable() {
       ${question.topic}
       ${question.difficulty}
       ${question.questionType}
-      ${ question.questionText } />
+      ${question.questionText } />
     `.toLowerCase();
 
     const matchesSearch = searchableText.includes(search.toLowerCase());
@@ -179,6 +179,9 @@ export default function QuestionTable() {
       key: "questionText",
       label: "Question",
       sortable: true,
+      render: (question) => (
+        <MathText text={question.questionText ?? ""} />
+      ),
     },
     {
       key: "correctAnswers",
