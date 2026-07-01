@@ -20,7 +20,10 @@ export async function getUserRole(userId: string) {
     .eq("id", userId)
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    console.error("Failed to load user role:", error);
+    throw error;
+  }
 
-  return (data?.role as "admin" | "student" | undefined) ?? null;
+  return data?.role || null;
 }

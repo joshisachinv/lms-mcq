@@ -18,18 +18,36 @@ export default function LoginPage() {
     try {
       const { data, error } = await signIn(email, password);
 
-      if (error || !data.user) {
-        alert("Login failed.");
+      if (error) {
+        console.error("Supabase login error:", error);
+        alert(error.message);
+        return;
+      }
+
+      if (!data.user) {
+        alert("No user returned from Supabase.");
         return;
       }
 
       const role = await getUserRole(data.user.id);
 
+      if (!role) {
+        alert("Login succeeded, but no profile role was found.");
+        return;
+      }
+
       if (role === "admin") {
         router.push("/admin");
-      } else {
-        router.push("/student");
+        return;
       }
+
+      if (role === "student") {
+        router.push("/student");
+        return;
+      }
+
+      alert(`Unknown role: ${role}`);
+      
     } catch (error) {
       console.error("Login failed:", error);
       alert("Login failed. Please try again.");
