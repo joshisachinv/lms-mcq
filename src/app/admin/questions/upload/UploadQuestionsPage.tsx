@@ -148,10 +148,10 @@ export default function UploadQuestionsPage() {
       raw: false,
     });
 
-    const headerRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, {
+    const headerRows = XLSX.utils.sheet_to_json<unknown[]>(worksheet, {
       header: 1,
       blankrows: false,
-    }) as unknown[][];
+    });
     const headers = (headerRows[0] || []).map((header) => normaliseHeader(String(header)));
     const missing = REQUIRED_COLUMNS.filter((column) => !headers.includes(column));
     setMissingColumns(missing);
