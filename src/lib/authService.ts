@@ -14,6 +14,18 @@ export async function signIn(email: string, password: string) {
   });
 }
 
+export async function signInAsAdmin() {
+  const email = process.env.NEXT_PUBLIC_DEMO_ADMIN_EMAIL!;
+  const password = process.env.NEXT_PUBLIC_DEMO_ADMIN_PASSWORD!;
+  return supabase.auth.signInWithPassword({ email, password });
+}
+
+export async function signInAsStudent() {
+  const email = process.env.NEXT_PUBLIC_DEMO_STUDENT_EMAIL!;
+  const password = process.env.NEXT_PUBLIC_DEMO_STUDENT_PASSWORD!;
+  return supabase.auth.signInWithPassword({ email, password });
+}
+
 export async function signOut() {
   return supabase.auth.signOut();
 }
