@@ -124,8 +124,8 @@ export default function TakeExamPage() {
         setCurrentIndex(savedDraft?.currentIndex || 0);
         setOverallTimeSpent(savedDraft?.overallTimeSpent || 0);
         setOverallTimeLeft(savedDraft?.overallTimeLeft ?? foundExam.overallTimerSeconds ?? 1800);
-        setQuestionTimeLeft(savedDraft?.questionTimeLeft || initialQuestionTimeLeft);
-        setQuestionTimeSpent(savedDraft?.questionTimeSpent || initialQuestionTimeSpent);
+        setQuestionTimeLeft({ ...initialQuestionTimeLeft, ...savedDraft?.questionTimeLeft });
+        setQuestionTimeSpent({ ...initialQuestionTimeSpent, ...savedDraft?.questionTimeSpent });
       } catch (error) {
         console.error(error);
         alert("Failed to load exam.");
@@ -161,28 +161,30 @@ export default function TakeExamPage() {
     if (!currentQuestion || score !== null) return;
 
     const timer = setInterval(() => {
-      setQuestionTimeLeft((previous) => {
-        const currentLeft =
-          previous[currentQuestion.id] ?? currentQuestion.timerSeconds ?? 60;
+      if (exam?.isTimed) {
+        setQuestionTimeLeft((previous) => {
+          const currentLeft =
+            previous[currentQuestion.id] ?? currentQuestion.timerSeconds ?? 60;
 
-        if (currentLeft <= 0) {
-          return previous;
-        }
+          if (currentLeft <= 0) {
+            return previous;
+          }
 
-        setQuestionTimeSpent((previousSpent) => ({
-          ...previousSpent,
-          [currentQuestion.id]: (previousSpent[currentQuestion.id] || 0) + 1,
-        }));
+          return {
+            ...previous,
+            [currentQuestion.id]: currentLeft - 1,
+          };
+        });
+      }
 
-        return {
-          ...previous,
-          [currentQuestion.id]: currentLeft - 1,
-        };
-      });
+      setQuestionTimeSpent((previousSpent) => ({
+        ...previousSpent,
+        [currentQuestion.id]: (previousSpent[currentQuestion.id] || 0) + 1,
+      }));
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [currentQuestion, score]);
+  }, [currentQuestion, score, exam?.isTimed]);
 
   useEffect(() => {
     if (!autosaveKey || !exam || score !== null) return;
@@ -241,8 +243,14 @@ export default function TakeExamPage() {
   const toggleAnswer = (option: string) => {
     if (!currentQuestion) return;
 
-    const remainingTime = questionTimeLeft[currentQuestion.id] ?? 0;
-    if (remainingTime <= 0) return;
+    if (exam?.isTimed) {
+      const remainingTime =
+        questionTimeLeft[currentQuestion.id] ??
+        currentQuestion.timerSeconds ??
+        60;
+
+      if (remainingTime <= 0) return;
+    }
 
     const questionId = currentQuestion.id;
     const existingAnswers = answers[questionId] || [];
@@ -440,6 +448,7 @@ export default function TakeExamPage() {
           flaggedQuestions={flaggedQuestions}
           questionTimeLeft={questionTimeLeft}
           onSelectQuestion={setCurrentIndex}
+          isTimed={exam.isTimed}
         />
       </div>
 

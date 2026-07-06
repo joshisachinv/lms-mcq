@@ -7,6 +7,7 @@ type Props = {
   flaggedQuestions: Record<string, boolean>;
   questionTimeLeft: Record<string, number>;
   onSelectQuestion: (index: number) => void;
+  isTimed?: boolean;
 };
 
 export default function QuestionNavigator({
@@ -16,6 +17,7 @@ export default function QuestionNavigator({
   flaggedQuestions,
   questionTimeLeft,
   onSelectQuestion,
+  isTimed = true,
 }: Props) {
   return (
     <aside className="exam-right-navigator">
@@ -28,6 +30,7 @@ export default function QuestionNavigator({
           const isFlagged = Boolean(flaggedQuestions[question.id]);
           const remaining =
             questionTimeLeft[question.id] ?? question.timerSeconds ?? 60;
+          const isExpired = isTimed && remaining <= 0;
 
           return (
             <button
@@ -39,7 +42,7 @@ export default function QuestionNavigator({
                 isCurrent ? "exam-question-current" : "",
                 isAnswered ? "exam-question-answered" : "",
                 isFlagged ? "exam-question-flagged" : "",
-                remaining <= 0 ? "exam-question-expired" : "",
+                isExpired ? "exam-question-expired" : "",
               ].join(" ")}
             >
               {index + 1}
