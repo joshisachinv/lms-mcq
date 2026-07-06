@@ -22,7 +22,7 @@ export default function Page() {
           </Button>
         </Link>
 
-        <Link href="/admin/questions/archived">
+                <Link href="/admin/questions/archived">
           <Button type="button" variant="secondary">
             Archived Questions
           </Button>
