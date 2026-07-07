@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getAttemptById } from "@/lib/attemptService";
 import MathText from "@/components/math/MathText";
 import PageTitle from "@/components/ui/PageTitle";
@@ -51,9 +51,54 @@ export default function ResultDetailPage() {
 
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [reviewFilter, setReviewFilter] = useState<"all" | "correct" | "wrong">("all");
+  const questionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const hasImage = (value: unknown) => {
     return typeof value === "string" && value.trim().length > 0;
+  };
+
+
+  const reviewedQuestions = useMemo(() => {
+    if (!attempt) return [];
+
+    return attempt.questionsSnapshot.map((question, index) => {
+      const studentAnswers = attempt.answers[question.id] || [];
+      const correctAnswers = question.correctAnswers || [];
+      const isCorrect =
+        studentAnswers.length === correctAnswers.length &&
+        studentAnswers.every((answer) => correctAnswers.includes(answer));
+
+      return {
+        question,
+        index,
+        studentAnswers,
+        correctAnswers,
+        isCorrect,
+      };
+    });
+  }, [attempt]);
+
+  const visibleReviewedQuestions = useMemo(() => {
+    if (reviewFilter === "correct") {
+      return reviewedQuestions.filter((item) => item.isCorrect);
+    }
+
+    if (reviewFilter === "wrong") {
+      return reviewedQuestions.filter((item) => !item.isCorrect);
+    }
+
+    return reviewedQuestions;
+  }, [reviewFilter, reviewedQuestions]);
+
+  const correctCount = reviewedQuestions.filter((item) => item.isCorrect).length;
+  const wrongCount = reviewedQuestions.length - correctCount;
+
+  const jumpToQuestion = (questionId: string) => {
+    questionRefs.current[questionId]?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   };
 
   useEffect(() => {
@@ -96,20 +141,85 @@ export default function ResultDetailPage() {
     <main className="page-container">
       <PageTitle title="Result Review" subtitle={attempt.examTitle} />
 
-      <div className="review-summary-grid">
-        <div>
-          <strong>
-            {attempt.score} / {attempt.totalQuestions}
-          </strong>
-          <span>Score</span>
+      <div className="result-review-toolbar">
+        <div className="result-review-toolbar-metrics">
+          <div className="result-review-metric">
+            <strong>
+              {attempt.score} / {attempt.totalQuestions}
+            </strong>
+            <span>Score</span>
+          </div>
+          <div className="result-review-metric">
+            <strong>{correctCount}</strong>
+            <span>Correct</span>
+          </div>
+          <div className="result-review-metric">
+            <strong>{wrongCount}</strong>
+            <span>Wrong</span>
+          </div>
+          <div className="result-review-metric">
+            <strong>{attempt.overallTimeLeft}s</strong>
+            <span>Time left</span>
+          </div>
         </div>
+
+        <div className="result-review-toolbar-controls">
+          <div className="result-review-filter-tabs" aria-label="Review filter">
+            <button
+              type="button"
+              className={reviewFilter === "all" ? "active" : ""}
+              onClick={() => setReviewFilter("all")}
+            >
+              All {reviewedQuestions.length}
+            </button>
+            <button
+              type="button"
+              className={reviewFilter === "correct" ? "active" : ""}
+              onClick={() => setReviewFilter("correct")}
+            >
+              Correct {correctCount}
+            </button>
+            <button
+              type="button"
+              className={reviewFilter === "wrong" ? "active" : ""}
+              onClick={() => setReviewFilter("wrong")}
+            >
+              Wrong {wrongCount}
+            </button>
+          </div>
+
+          <div className="result-question-jump-list" aria-label="Jump to question">
+            {reviewedQuestions.map(({ question, index, isCorrect }) => (
+              <button
+                key={question.id}
+                type="button"
+                className={
+                  isCorrect
+                    ? "result-question-jump result-question-jump-correct"
+                    : "result-question-jump result-question-jump-wrong"
+                }
+                onClick={() => {
+                  if (reviewFilter === "correct" && !isCorrect) setReviewFilter("all");
+                  if (reviewFilter === "wrong" && isCorrect) setReviewFilter("all");
+                  window.setTimeout(() => jumpToQuestion(question.id), 0);
+                }}
+                title={`Question ${index + 1}: ${isCorrect ? "Correct" : "Wrong"}`}
+              >
+                {index + 1}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="review-summary-grid">
         <div>
           <strong>{new Date(attempt.submittedAt).toLocaleDateString()}</strong>
           <span>Submitted</span>
         </div>
         <div>
-          <strong>{attempt.overallTimeLeft}s</strong>
-          <span>Time remaining</span>
+          <strong>{visibleReviewedQuestions.length}</strong>
+          <span>Questions shown</span>
         </div>
       </div>
 
@@ -117,16 +227,17 @@ export default function ResultDetailPage() {
         <h2>Question Review</h2>
       </div>
 
-      {attempt.questionsSnapshot.map((question, index) => {
-        const studentAnswers = attempt.answers[question.id] || [];
-        const correctAnswers = question.correctAnswers || [];
-
-        const isCorrect =
-          studentAnswers.length === correctAnswers.length &&
-          studentAnswers.every((answer) => correctAnswers.includes(answer));
-
+      {visibleReviewedQuestions.map(({ question, index, studentAnswers, correctAnswers, isCorrect }) => {
         return (
-          <div key={question.id} className="surface-panel review-question-card">
+          <div
+            key={question.id}
+            ref={(element) => {
+              questionRefs.current[question.id] = element;
+            }}
+            className={`surface-panel review-question-card ${
+              isCorrect ? "review-question-card-correct" : "review-question-card-wrong"
+            }`}
+          >
             <div className="review-question-header">
               <h3>Question {index + 1}</h3>
               <Badge color={isCorrect ? "green" : "red"}>

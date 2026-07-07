@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import QuestionCard from "@/components/exam/QuestionCard";
 import ScratchpadPanel from "@/components/exam/ScratchpadPanel";
@@ -37,6 +37,9 @@ export default function TakeExamPage() {
   const [flaggedQuestions, setFlaggedQuestions] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+
+  const [pendingNavigationHref, setPendingNavigationHref] = useState<string | null>(null);
+  const bypassLeaveWarningRef = useRef(false);
 
   const autosaveKey = useMemo(() => {
     if (!examId || !user?.id) return "";
@@ -228,6 +231,47 @@ export default function TakeExamPage() {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [exam, score]);
 
+  useEffect(() => {
+    if (!exam || score !== null) return;
+
+    const handleDocumentClick = (event: MouseEvent) => {
+      if (bypassLeaveWarningRef.current) return;
+
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+
+      const clickedInsideExam = target.closest(".exam-shell");
+      if (clickedInsideExam) return;
+
+      const link = target.closest("a[href]") as HTMLAnchorElement | null;
+
+      if (link?.href) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        setPendingNavigationHref(link.href);
+        setShowSubmitDialog(true);
+        return;
+      }
+
+      const button = target.closest("button") as HTMLButtonElement | null;
+
+      if (button) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        setPendingNavigationHref("/");
+        setShowSubmitDialog(true);
+      }
+    };
+
+    document.addEventListener("click", handleDocumentClick, true);
+
+    return () => {
+      document.removeEventListener("click", handleDocumentClick, true);
+    };
+  }, [exam, score]);
+  
   const formatTime = (seconds: number) => {
     const safeSeconds = Math.max(0, seconds);
     const minutes = Math.floor(safeSeconds / 60);
@@ -329,6 +373,11 @@ export default function TakeExamPage() {
       }
 
       setScore(total);
+
+      if (pendingNavigationHref) {
+        bypassLeaveWarningRef.current = true;
+        window.location.href = pendingNavigationHref;
+      }
     } catch (error) {
       console.error(error);
       alert("Failed to save exam attempt.");
@@ -404,42 +453,41 @@ export default function TakeExamPage() {
 
       <div className="exam-main-layout">
         <section className="exam-main-question">
-          <QuestionCard
-            question={currentQuestion}
-            questionNumber={currentIndex + 1}
-            selectedAnswers={answers[currentQuestion.id] || []}
-            isLocked={isCurrentQuestionLocked}
-            isFlagged={Boolean(flaggedQuestions[currentQuestion.id])}
-            onToggleAnswer={toggleAnswer}
-            onToggleFlag={toggleFlag}
-            onPrevious={() => setCurrentIndex(currentIndex - 1)}
-            onNext={() => setCurrentIndex(currentIndex + 1)}
-            onSubmit={() => void submitExam(false)}
-            onToggleScratchpad={() =>
-              setIsScratchpadOpen((current) => !current)
-            }
-            canGoPrevious={currentIndex > 0}
-            canGoNext={currentIndex < questions.length - 1}
-            submitting={submitting}
-          />
-
-          {isScratchpadOpen && (
-          <div className="exam-inline-scratchpad">
-            <ScratchpadPanel
-              questionId={currentQuestion.id}
-              value={scratchpads[currentQuestion.id] || ""}
-              isOpen={isScratchpadOpen}
-              onToggleOpen={() => setIsScratchpadOpen(false)}
-              onChange={(value) =>
-                setScratchpads((previous) => ({
-                  ...previous,
-                  [currentQuestion.id]: value,
-                }))
-              }
+          <div className="exam-sticky-question-panel">
+            <QuestionCard
+              question={currentQuestion}
+              questionNumber={currentIndex + 1}
+              selectedAnswers={answers[currentQuestion.id] || []}
+              isLocked={isCurrentQuestionLocked}
+              isFlagged={Boolean(flaggedQuestions[currentQuestion.id])}
+              onToggleAnswer={toggleAnswer}
+              onToggleFlag={toggleFlag}
+              onPrevious={() => setCurrentIndex(currentIndex - 1)}
+              onNext={() => setCurrentIndex(currentIndex + 1)}
+              onSubmit={() => void submitExam(false)}
+              onToggleScratchpad={() => setIsScratchpadOpen((current) => !current)}
+              canGoPrevious={currentIndex > 0}
+              canGoNext={currentIndex < questions.length - 1}
+              submitting={submitting}
             />
-          </div>
-        )}
 
+            {isScratchpadOpen && (
+              <div className="exam-inline-scratchpad">
+                <ScratchpadPanel
+                  questionId={currentQuestion.id}
+                  value={scratchpads[currentQuestion.id] || ""}
+                  isOpen={isScratchpadOpen}
+                  onToggleOpen={() => setIsScratchpadOpen(false)}
+                  onChange={(value) =>
+                    setScratchpads((previous) => ({
+                      ...previous,
+                      [currentQuestion.id]: value,
+                    }))
+                  }
+                />
+              </div>
+            )}
+          </div>
         </section>
 
         <QuestionNavigator
@@ -453,15 +501,16 @@ export default function TakeExamPage() {
         />
       </div>
 
-
-
       <Dialog
         open={showSubmitDialog}
         title="Submit exam?"
         description="Please confirm before submitting. You will not be able to change your answers after submission."
         confirmLabel={submitting ? "Submitting..." : "Submit exam"}
         cancelLabel="Continue exam"
-        onCancel={() => setShowSubmitDialog(false)}
+        onCancel={() => {
+          setPendingNavigationHref(null);
+          setShowSubmitDialog(false);
+        }}
         onConfirm={() => void submitExam(true)}
       >
         <div className="submit-confirm-summary">
