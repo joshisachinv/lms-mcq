@@ -15,12 +15,14 @@ type Props<T> = {
   data: T[];
   columns: Column<T>[];
   getRowKey: (row: T) => string;
+  rowClassName?: (row: T) => string;
 };
 
 export default function DataTable<T>({
   data,
   columns,
   getRowKey,
+  rowClassName,
 }: Props<T>) {
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [sortKey, setSortKey] = useState<string>("");
@@ -140,7 +142,7 @@ export default function DataTable<T>({
 
         <tbody>
           {filteredData.map((row) => (
-            <tr key={getRowKey(row)}>
+            <tr key={getRowKey(row)} className={rowClassName?.(row) || undefined}>
               {columns.map((column) => (
                 <td key={String(column.key)}>
                   {column.render

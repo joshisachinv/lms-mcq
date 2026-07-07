@@ -196,11 +196,7 @@ export default function EditQuestionPage() {
                 <img
                   src={question.questionImage}
                   alt="Question"
-                  style={{
-                    maxWidth: "300px",
-                    display: "block",
-                    marginBottom: "12px",
-                  }}
+                  className="image-preview"
                 />
 
                 <Button
@@ -266,12 +262,7 @@ export default function EditQuestionPage() {
                           <img
                             src={existingImage}
                             alt={`Option ${option}`}
-                            style={{
-                              maxWidth: "200px",
-                              display: "block",
-                              marginTop: "8px",
-                              marginBottom: "8px",
-                            }}
+                            className="image-preview-sm"
                           />
 
                           <Button

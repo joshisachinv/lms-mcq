@@ -1,15 +1,18 @@
 "use client";
 
-
-import CreateExamDetailsForm from "@/components/exams/create/CreateExamDetailsForm"
+import CreateExamDetailsForm from "@/components/exams/create/CreateExamDetailsForm";
 import { useEffect, useState } from "react";
 import QuestionBankFilters from "@/components/exams/edit/QuestionBankFilters";
 import ExamQuestionSelector from "@/components/exams/edit/ExamQuestionSelector";
-import { addExam } from "@/lib/examService";
+import {
+  addExam,
+  getQuestionUsageMap,
+  getQuestionUsageDetailsMap,
+} from "@/lib/examService";
 import { getQuestions, Question } from "@/lib/questionService";
-import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import PageTitle from "@/components/ui/PageTitle";
+import SelectedQuestionSummary from "@/components/questions/SelectedQuestionSummary";
 
 export default function CreateExamPage() {
   const [title, setTitle] = useState("");
@@ -26,12 +29,25 @@ export default function CreateExamPage() {
   const [topicFilter, setTopicFilter] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("");
   const [viewMode, setViewMode] = useState("all");
+  const [testedFilter, setTestedFilter] = useState("");
+  const [questionUsageMap, setQuestionUsageMap] = useState<
+    Record<string, number>
+  >({});
+  const [questionUsageDetailsMap, setQuestionUsageDetailsMap] = useState<
+    Record<string, string[]>
+  >({});
 
   useEffect(() => {
     const loadQuestions = async () => {
       try {
-        const data = await getQuestions();
+        const [data, usageMap, usageDetailsMap] = await Promise.all([
+          getQuestions(),
+          getQuestionUsageMap(),
+          getQuestionUsageDetailsMap(),
+        ]);
         setQuestions(data);
+        setQuestionUsageMap(usageMap);
+        setQuestionUsageDetailsMap(usageDetailsMap);
       } catch (error) {
         console.error(error);
         alert("Failed to load questions.");
@@ -42,11 +58,11 @@ export default function CreateExamPage() {
   }, []);
 
   const subjects = Array.from(
-    new Set(questions.map((question) => question.subject).filter(Boolean))
+    new Set(questions.map((question) => question.subject).filter(Boolean)),
   );
 
   const topics = Array.from(
-    new Set(questions.map((question) => question.topic).filter(Boolean))
+    new Set(questions.map((question) => question.topic).filter(Boolean)),
   );
 
   const filteredQuestions = questions.filter((question) => {
@@ -69,17 +85,43 @@ export default function CreateExamPage() {
       ? question.difficulty === difficultyFilter
       : true;
 
-    return matchesSearch && matchesSubject && matchesTopic && matchesDifficulty;
+    const alreadyTested = Boolean(questionUsageMap[question.id]);
+
+    const matchesTested =
+      testedFilter === "tested"
+        ? alreadyTested
+        : testedFilter === "not-tested"
+          ? !alreadyTested
+          : true;
+
+    return (
+      matchesSearch &&
+      matchesSubject &&
+      matchesTopic &&
+      matchesDifficulty &&
+      matchesTested
+    );
   });
 
   const displayedQuestions = filteredQuestions
     .filter((question) => {
+      const isSelected = selectedQuestions.includes(question.id);
+      const isUsed = Boolean(questionUsageMap[question.id]);
+
       if (viewMode === "selected") {
-        return selectedQuestions.includes(question.id);
+        return isSelected;
       }
 
       if (viewMode === "unselected") {
-        return !selectedQuestions.includes(question.id);
+        return !isSelected;
+      }
+
+      if (viewMode === "used") {
+        return isUsed;
+      }
+
+      if (viewMode === "unused") {
+        return !isUsed;
       }
 
       return true;
@@ -99,7 +141,7 @@ export default function CreateExamPage() {
     setSelectedQuestions((current) =>
       current.includes(questionId)
         ? current.filter((id) => id !== questionId)
-        : [...current, questionId]
+        : [...current, questionId],
     );
   };
 
@@ -122,17 +164,25 @@ export default function CreateExamPage() {
     const filteredIds = filteredQuestions.map((question) => question.id);
 
     setSelectedQuestions((current) =>
-      Array.from(new Set([...current, ...filteredIds]))
+      Array.from(new Set([...current, ...filteredIds])),
     );
   };
 
   const clearFilteredQuestions = () => {
     const filteredIds = new Set(
-      filteredQuestions.map((question) => question.id)
+      filteredQuestions.map((question) => question.id),
     );
 
     setSelectedQuestions((current) =>
-      current.filter((id) => !filteredIds.has(id))
+      current.filter((id) => !filteredIds.has(id)),
+    );
+  };
+
+  const handleQuestionUpdated = (updatedQuestion: Question) => {
+    setQuestions((current) =>
+      current.map((question) =>
+        question.id === updatedQuestion.id ? updatedQuestion : question,
+      ),
     );
   };
 
@@ -171,6 +221,7 @@ export default function CreateExamPage() {
       setSubjectFilter("");
       setTopicFilter("");
       setDifficultyFilter("");
+      setTestedFilter("");
       setViewMode("all");
     } catch (error) {
       console.error(error);
@@ -183,6 +234,17 @@ export default function CreateExamPage() {
       <PageTitle
         title="Create Exam"
         subtitle="Create an exam by selecting questions from the question bank."
+      />
+
+      <SelectedQuestionSummary
+        questions={questions}
+        selectedQuestionIds={selectedQuestions}
+        testedQuestionIds={new Set(Object.keys(questionUsageMap))}
+        title="Selected for this exam"
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        onSave={createExam}
+        saveLabel="Create Exam"
       />
 
       <Card className="form-card exam-form-card">
@@ -207,12 +269,14 @@ export default function CreateExamPage() {
             subjectFilter={subjectFilter}
             topicFilter={topicFilter}
             difficultyFilter={difficultyFilter}
+            testedFilter={testedFilter}
             subjects={subjects}
             topics={topics}
             onSearchChange={setSearch}
             onSubjectChange={setSubjectFilter}
             onTopicChange={setTopicFilter}
             onDifficultyChange={setDifficultyFilter}
+            onTestedChange={setTestedFilter}
             onSelectFiltered={selectFilteredQuestions}
             onClearFiltered={clearFilteredQuestions}
           />
@@ -220,15 +284,14 @@ export default function CreateExamPage() {
           <ExamQuestionSelector
             questions={displayedQuestions}
             selectedQuestionIds={selectedQuestions}
+            testedQuestionIds={new Set(Object.keys(questionUsageMap))}
+            usageMap={questionUsageMap}
+            usageDetailsMap={questionUsageDetailsMap}
+            onQuestionUpdated={handleQuestionUpdated}
             onToggleQuestion={toggleQuestion}
             onMoveQuestion={moveQuestion}
           />
 
-          <div className="action-row">
-            <Button type="button" onClick={createExam}>
-              Create Exam
-            </Button>
-          </div>
         </div>
       </Card>
     </main>

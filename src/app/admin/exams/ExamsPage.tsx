@@ -12,7 +12,7 @@ export default function AdminExamsPage() {
         subtitle="Create, manage, archive and restore exams."
       />
 
-      <div className="action-row" style={{ marginBottom: "20px" }}>
+      <div className="action-row">
         <Link href="/admin/exams/create">
           <Button>Create Exam</Button>
         </Link>

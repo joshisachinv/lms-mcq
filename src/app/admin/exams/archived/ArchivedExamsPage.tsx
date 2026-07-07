@@ -68,7 +68,7 @@ export default function ArchivedExamsPage() {
         subtitle="Review and restore archived exams."
       />
 
-      <div className="action-row" style={{ marginBottom: "16px" }}>
+      <div className="action-row">
         <Link href="/admin/exams">
           <Button type="button" variant="secondary">
             Back to Exam Management

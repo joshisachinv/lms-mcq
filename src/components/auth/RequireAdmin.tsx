@@ -51,7 +51,7 @@ export default function RequireAdmin({
   }, [loading, user, router]);
 
   if (loading || checkingRole || !isAdmin) {
-    return <p style={{ padding: "40px" }}>Checking admin access...</p>;
+    return <p className="auth-loading">Checking admin access...</p>;
   }
 
   return <>{children}</>;

@@ -75,13 +75,19 @@ export default function AdminResultsPage() {
         subtitle="Review all submitted exam attempts."
       />
 
-      {attempts.length > 0 && (
-        <div className="action-row" style={{ marginBottom: "16px" }}>
+      <div className="action-row">
+        <Link href="/admin/questions/review">
+          <Button type="button" variant="secondary">
+            Review Questions
+          </Button>
+        </Link>
+
+        {attempts.length > 0 && (
           <Button type="button" variant="secondary" onClick={exportResultsToExcel}>
             Export Results to Excel
           </Button>
-        </div>
-      )}
+        )}
+      </div>
       
       {attempts.length === 0 ? (
         <EmptyState message="No exam attempts found." />

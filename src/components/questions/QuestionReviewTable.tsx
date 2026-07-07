@@ -1,27 +1,23 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-import {
-  archiveQuestion,
-  duplicateQuestion,
-  getQuestions,
-  Question,
-} from "@/lib/questionService";
+import { getQuestions, Question } from "@/lib/questionService";
 import { getQuestionUsageMap, getQuestionUsageDetailsMap } from "@/lib/examService";
+import { getQuestionStatsMap, QuestionStats } from "@/lib/attemptService";
 
-import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import QuestionGrid from "@/components/questions/QuestionGrid";
 
-export default function QuestionTable() {
+
+export default function QuestionReviewTable() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [questionUsageMap, setQuestionUsageMap] = useState<Record<string, number>>({});
   const [questionUsageDetailsMap, setQuestionUsageDetailsMap] = useState<Record<string, string[]>>({});
+  const [questionStatsMap, setQuestionStatsMap] = useState<Record<string, QuestionStats>>({});
 
   const [search, setSearch] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
@@ -30,27 +26,29 @@ export default function QuestionTable() {
   const [typeFilter, setTypeFilter] = useState("");
   const [testedFilter, setTestedFilter] = useState("");
 
-  const loadQuestions = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const [data, usageMap, usageDetailsMap] = await Promise.all([
+      const [questionData, usageMap, usageDetailsMap, statsMap] = await Promise.all([
         getQuestions(),
         getQuestionUsageMap(),
         getQuestionUsageDetailsMap(),
+        getQuestionStatsMap(),
       ]);
-      setQuestions(data);
+      setQuestions(questionData);
       setQuestionUsageMap(usageMap);
       setQuestionUsageDetailsMap(usageDetailsMap);
+      setQuestionStatsMap(statsMap);
     } catch (error) {
       console.error(error);
-      alert("Failed to load questions.");
+      alert("Failed to load question performance data.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadQuestions();
+    loadData();
   }, []);
 
   const testedQuestionIds = useMemo(
@@ -135,31 +133,8 @@ export default function QuestionTable() {
     testedQuestionIds,
   ]);
 
-  const handleArchive = async (id: string) => {
-    const confirmed = confirm("Archive this question?");
-    if (!confirmed) return;
-
-    try {
-      await archiveQuestion(id);
-      await loadQuestions();
-    } catch (error) {
-      console.error(error);
-      alert("Failed to archive question.");
-    }
-  };
-
-  const handleDuplicate = async (question: Question) => {
-    try {
-      await duplicateQuestion(question);
-      await loadQuestions();
-    } catch (error) {
-      console.error(error);
-      alert("Failed to duplicate question.");
-    }
-  };
-
   if (loading) {
-    return <p className="auth-loading">Loading questions...</p>;
+    return <p className="auth-loading">Loading question performance...</p>;
   }
 
   if (questions.length === 0) {
@@ -250,6 +225,8 @@ export default function QuestionTable() {
           testedQuestionIds={testedQuestionIds}
           usageMap={questionUsageMap}
           usageDetailsMap={questionUsageDetailsMap}
+          statsMap={questionStatsMap}
+          showReviewStats
           onQuestionUpdated={(updatedQuestion) =>
             setQuestions((current) =>
               current.map((question) =>
@@ -257,31 +234,6 @@ export default function QuestionTable() {
               )
             )
           }
-          renderActions={(question) => (
-            <div className="question-actions">
-              <Link href={`/admin/questions/edit/${question.id}`}>
-                <Button variant="icon" title="Open full edit page">
-                  ✎
-                </Button>
-              </Link>
-
-              <Button
-                variant="icon"
-                title="Duplicate"
-                onClick={() => handleDuplicate(question)}
-              >
-                ⧉
-              </Button>
-
-              <Button
-                variant="iconDanger"
-                title="Archive"
-                onClick={() => handleArchive(question.id)}
-              >
-                🗄
-              </Button>
-            </div>
-          )}
         />
       )}
     </>

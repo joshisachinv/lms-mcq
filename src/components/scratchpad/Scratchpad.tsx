@@ -180,10 +180,9 @@ export default function Scratchpad({ value, onChange }: Props) {
         ref={canvasRef}
         width={1200}
         height={450}
-        className="scratchpad-canvas"
-        style={{
-          cursor: tool === "pencil" ? "crosshair" : "cell",
-        }}
+        className={`scratchpad-canvas ${
+          tool === "pencil" ? "scratchpad-canvas-pencil" : "scratchpad-canvas-eraser"
+        }`}
         onMouseDown={startDrawing}
         onMouseMove={draw}
         onMouseUp={stopDrawing}

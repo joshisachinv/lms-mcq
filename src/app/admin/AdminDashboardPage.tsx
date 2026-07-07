@@ -1,10 +1,13 @@
 import Link from "next/link";
+import PageTitle from "@/components/ui/PageTitle";
 
 export default function AdminDashboardPage() {
   return (
     <main className="page-container">
-      <h1>Admin Dashboard</h1>
-      <p>Manage questions, exams, and results.</p>
+      <PageTitle
+        title="Admin Dashboard"
+        subtitle="Manage questions, exams, and results."
+      />
 
       <div className="card-grid">
         <div className="dashboard-card">

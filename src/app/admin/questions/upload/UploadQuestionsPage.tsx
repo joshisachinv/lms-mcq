@@ -460,7 +460,7 @@ export default function UploadQuestionsPage() {
               <strong>Some images could not be uploaded</strong> — questions were
               still imported without them. Check your Supabase storage bucket
               policies for <code>question-images</code>.
-              <ul style={{ margin: "8px 0 0", paddingLeft: "18px", fontSize: "12px" }}>
+              <ul>
                 {report.imageFailures.map((f, i) => <li key={i}>{f}</li>)}
               </ul>
             </div>
@@ -502,7 +502,7 @@ export default function UploadQuestionsPage() {
 
           {/* Duplicate override notice */}
           {dupQs.length > 0 && (
-            <div className="import-alert" style={{ background: "#fefce8", borderColor: "#fde68a", color: "#854d0e" }}>
+            <div className="import-alert import-alert-warning">
               <strong>{overriddenQs.length} of {dupQs.length} duplicate{dupQs.length !== 1 ? "s" : ""} selected for override.</strong>
               {" "}Check the box in the Duplicate column to import a duplicate anyway.
             </div>

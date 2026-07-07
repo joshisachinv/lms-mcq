@@ -19,7 +19,7 @@ export default function RequireAuth({
   }, [loading, user, router]);
 
   if (loading || !user) {
-    return <p style={{ padding: "40px" }}>Checking login...</p>;
+    return <p className="auth-loading">Checking login...</p>;
   }
 
   return <>{children}</>;

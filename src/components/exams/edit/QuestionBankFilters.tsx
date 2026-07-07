@@ -8,12 +8,14 @@ type Props = {
   subjectFilter: string;
   topicFilter: string;
   difficultyFilter: string;
+  testedFilter: string;
   subjects: string[];
   topics: string[];
   onSearchChange: (value: string) => void;
   onSubjectChange: (value: string) => void;
   onTopicChange: (value: string) => void;
   onDifficultyChange: (value: string) => void;
+  onTestedChange: (value: string) => void;
   onSelectFiltered: () => void;
   onClearFiltered: () => void;
 };
@@ -23,12 +25,14 @@ export default function QuestionBankFilters({
   subjectFilter,
   topicFilter,
   difficultyFilter,
+  testedFilter,
   subjects,
   topics,
   onSearchChange,
   onSubjectChange,
   onTopicChange,
   onDifficultyChange,
+  onTestedChange,
   onSelectFiltered,
   onClearFiltered,
 }: Props) {
@@ -82,15 +86,25 @@ export default function QuestionBankFilters({
           <option value="Difficult">Difficult</option>
         </Select>
 
-        <div className="action-row form-span-3">
-          <Button type="button" variant="secondary" onClick={onSelectFiltered}>
+        <Select
+          label="Already tested"
+          value={testedFilter}
+          onChange={(e) => onTestedChange(e.target.value)}
+        >
+          <option value="">All questions</option>
+          <option value="tested">Already used in another exam</option>
+          <option value="not-tested">Not yet used in any exam</option>
+        </Select>
+
+        
+        <Button type="button" variant="secondary" onClick={onSelectFiltered}>
             Select Filtered
           </Button>
 
-          <Button type="button" variant="secondary" onClick={onClearFiltered}>
+        <Button type="button" variant="secondary" onClick={onClearFiltered}>
             Clear Filtered
           </Button>
-        </div>
+        
       </div>
     </FormSection>
   );

@@ -11,7 +11,7 @@ export default function Page() {
         subtitle="Search, filter, duplicate, archive, and edit questions."
       />
 
-      <div className="action-row" style={{ marginBottom: "16px" }}>
+      <div className="action-row">
         <Link href="/admin/questions/add">
           <Button type="button">Add Question</Button>
         </Link>
@@ -25,6 +25,12 @@ export default function Page() {
                 <Link href="/admin/questions/archived">
           <Button type="button" variant="secondary">
             Archived Questions
+          </Button>
+        </Link>
+
+        <Link href="/admin/questions/review">
+          <Button type="button" variant="secondary">
+            Review Questions
           </Button>
         </Link>
       </div>

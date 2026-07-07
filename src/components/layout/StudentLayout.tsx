@@ -6,7 +6,7 @@ export default function StudentLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-role="student">
       <PageHeader
         title="LMS MCQ"
         subtitle="Student"

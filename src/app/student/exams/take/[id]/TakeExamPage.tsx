@@ -17,7 +17,7 @@ import Dialog from "@/components/ui/Dialog";
 export default function TakeExamPage() {
   const params = useParams<{ id: string }>();
   const examId = params.id;
-  const { user, loading: userLoading } = useAuth();
+  const { user, loading: userLoading, profile} = useAuth();
 
   const [exam, setExam] = useState<Exam | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -310,6 +310,7 @@ export default function TakeExamPage() {
     try {
       await addAttempt({
         studentId: user.id,
+        studentName: profile?.fullName || user.email || "Student",
         examId: exam.id,
         examTitle: exam.title,
         score: total,

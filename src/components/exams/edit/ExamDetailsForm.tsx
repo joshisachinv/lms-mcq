@@ -49,17 +49,6 @@ export default function ExamDetailsForm({
         </div>
 
         <Select
-          label="Status"
-          value={exam.isActive ? "active" : "inactive"}
-          onChange={(e) =>
-            onUpdateField("isActive", e.target.value === "active")
-          }
-        >
-          <option value="inactive">Inactive</option>
-          <option value="active">Active</option>
-        </Select>
-
-        <Select
           label="Randomize Questions"
           value={exam.randomizeQuestions ? "yes" : "no"}
           onChange={(e) =>
@@ -80,9 +69,8 @@ export default function ExamDetailsForm({
           <option value="timed">Timed - enforce time limits</option>
           <option value="untimed">Untimed - track time only</option>
         </Select>
-
-        <div className="form-span-3">
-          <Select
+        
+        <Select
             label="View"
             value={viewMode}
             onChange={(e) => onViewModeChange(e.target.value)}
@@ -90,8 +78,8 @@ export default function ExamDetailsForm({
             <option value="selected">Selected Questions - Exam Order</option>
             <option value="all">All Questions</option>
             <option value="unselected">Unselected Questions</option>
-          </Select>
-        </div>
+        </Select>
+      
       </div>
     </FormSection>
   );

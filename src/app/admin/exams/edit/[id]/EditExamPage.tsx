@@ -2,14 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import ExamDetailsForm from "@/components/exams/edit/ExamDetailsForm"
+import ExamDetailsForm from "@/components/exams/edit/ExamDetailsForm";
 import QuestionBankFilters from "@/components/exams/edit/QuestionBankFilters";
 import ExamQuestionTable from "@/components/exams/edit/ExamQuestionTable";
 import ExamEditActions from "@/components/exams/edit/ExamEditActions";
-import { getExamById, updateExam, Exam } from "@/lib/examService";
+import {
+  getExamById,
+  getQuestionUsageMap,
+  getQuestionUsageDetailsMap,
+  updateExam,
+  Exam,
+} from "@/lib/examService";
 import { getQuestions, Question } from "@/lib/questionService";
 import Card from "@/components/ui/Card";
 import PageTitle from "@/components/ui/PageTitle";
+import SelectedQuestionSummary from "@/components/questions/SelectedQuestionSummary";
 
 export default function EditExamPage() {
   const params = useParams<{ id: string }>();
@@ -23,15 +30,29 @@ export default function EditExamPage() {
   const [difficultyFilter, setDifficultyFilter] = useState("");
   const [isTimed, setIsTimed] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [viewMode, setViewMode] = useState("selected");
+  const [viewMode, setViewMode] = useState("all");
+  const [testedFilter, setTestedFilter] = useState("");
+  const [questionUsageMap, setQuestionUsageMap] = useState<
+    Record<string, number>
+  >({});
+  const [questionUsageDetailsMap, setQuestionUsageDetailsMap] = useState<
+    Record<string, string[]>
+  >({});
   useEffect(() => {
     const loadData = async () => {
       try {
-        const questionData = await getQuestions();
-        const foundExam = await getExamById(examId);
+        const [questionData, foundExam, usageMap, usageDetailsMap] =
+          await Promise.all([
+            getQuestions(),
+            getExamById(examId),
+            getQuestionUsageMap(examId),
+            getQuestionUsageDetailsMap(examId),
+          ]);
 
         setExam(foundExam);
         setQuestions(questionData);
+        setQuestionUsageMap(usageMap);
+        setQuestionUsageDetailsMap(usageDetailsMap);
       } catch (error) {
         console.error(error);
         alert("Failed to load exam.");
@@ -58,10 +79,10 @@ export default function EditExamPage() {
 
     updateField("questionIds", updatedQuestionIds);
   };
-  
+
   const updateField = (
     field: keyof Exam,
-    value: string | number | boolean | string[]
+    value: string | number | boolean | string[],
   ) => {
     if (!exam) return;
 
@@ -71,7 +92,6 @@ export default function EditExamPage() {
     });
   };
 
-  
   const toggleQuestion = (questionId: string) => {
     if (!exam) return;
 
@@ -81,18 +101,18 @@ export default function EditExamPage() {
       "questionIds",
       exists
         ? exam.questionIds.filter((id) => id !== questionId)
-        : [...exam.questionIds, questionId]
+        : [...exam.questionIds, questionId],
     );
   };
-  
+
   const subjects = Array.from(
-    new Set(questions.map((question) => question.subject).filter(Boolean))
+    new Set(questions.map((question) => question.subject).filter(Boolean)),
   );
 
   const topics = Array.from(
-    new Set(questions.map((question) => question.topic).filter(Boolean))
+    new Set(questions.map((question) => question.topic).filter(Boolean)),
   );
-  
+
   const filteredQuestions = questions.filter((question) => {
     const searchableText = `
       ${question.subject}
@@ -106,20 +126,29 @@ export default function EditExamPage() {
     const matchesSubject =
       subjectFilter === "" || question.subject === subjectFilter;
 
-    const matchesTopic =
-      topicFilter === "" || question.topic === topicFilter;
+    const matchesTopic = topicFilter === "" || question.topic === topicFilter;
 
     const matchesDifficulty =
       difficultyFilter === "" || question.difficulty === difficultyFilter;
+
+    const alreadyTested = Boolean(questionUsageMap[question.id]);
+
+    const matchesTested =
+      testedFilter === "tested"
+        ? alreadyTested
+        : testedFilter === "not-tested"
+          ? !alreadyTested
+          : true;
 
     return (
       matchesSearch &&
       matchesSubject &&
       matchesTopic &&
-      matchesDifficulty
+      matchesDifficulty &&
+      matchesTested
     );
   });
-  
+
   const selectFilteredQuestions = () => {
     if (!exam) return;
 
@@ -127,7 +156,7 @@ export default function EditExamPage() {
 
     updateField(
       "questionIds",
-      Array.from(new Set([...exam.questionIds, ...filteredIds]))
+      Array.from(new Set([...exam.questionIds, ...filteredIds])),
     );
   };
 
@@ -138,35 +167,54 @@ export default function EditExamPage() {
 
     updateField(
       "questionIds",
-      exam.questionIds.filter((id) => !filteredIds.has(id))
+      exam.questionIds.filter((id) => !filteredIds.has(id)),
     );
   };
-  
+
   const displayedQuestions = exam
-  ? filteredQuestions
-      .filter((question) => {
-        if (viewMode === "selected") {
-          return exam.questionIds.includes(question.id);
-        }
+    ? filteredQuestions
+        .filter((question) => {
+          const isSelected = exam.questionIds.includes(question.id);
+          const isUsed = Boolean(questionUsageMap[question.id]);
 
-        if (viewMode === "unselected") {
-          return !exam.questionIds.includes(question.id);
-        }
+          if (viewMode === "selected") {
+            return isSelected;
+          }
 
-        return true;
-      })
-      .sort((a, b) => {
-        const indexA = exam.questionIds.indexOf(a.id);
-        const indexB = exam.questionIds.indexOf(b.id);
+          if (viewMode === "unselected") {
+            return !isSelected;
+          }
 
-        if (indexA === -1 && indexB === -1) return 0;
-        if (indexA === -1) return 1;
-        if (indexB === -1) return -1;
+          if (viewMode === "used") {
+            return isUsed;
+          }
 
-        return indexA - indexB;
-      })
-  : [];
- 
+          if (viewMode === "unused") {
+            return !isUsed;
+          }
+
+          return true;
+        })
+        .sort((a, b) => {
+          const indexA = exam.questionIds.indexOf(a.id);
+          const indexB = exam.questionIds.indexOf(b.id);
+
+          if (indexA === -1 && indexB === -1) return 0;
+          if (indexA === -1) return 1;
+          if (indexB === -1) return -1;
+
+          return indexA - indexB;
+        })
+    : [];
+
+  const handleQuestionUpdated = (updatedQuestion: Question) => {
+    setQuestions((current) =>
+      current.map((question) =>
+        question.id === updatedQuestion.id ? updatedQuestion : question,
+      ),
+    );
+  };
+
   const saveChanges = async () => {
     if (!exam) return;
 
@@ -208,44 +256,62 @@ export default function EditExamPage() {
         subtitle="Modify exam details and selected questions."
       />
 
+      <SelectedQuestionSummary
+        questions={questions}
+        selectedQuestionIds={exam.questionIds}
+        testedQuestionIds={new Set(Object.keys(questionUsageMap))}
+        title="Selected for this exam"
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        onSave={saveChanges}
+        saveLabel="Save Exam"
+        saving={saving}
+      />
+
       <Card className="form-card exam-form-card">
-          <div className="form-grid">
-            <ExamDetailsForm
-              exam={exam}
-              viewMode={viewMode}
-              onViewModeChange={setViewMode}
-              onUpdateField={updateField}
-            />
+        <div className="form-grid">
+          <ExamDetailsForm
+            exam={exam}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            onUpdateField={updateField}
+          />
 
-            <QuestionBankFilters
-              search={search}
-              subjectFilter={subjectFilter}
-              topicFilter={topicFilter}
-              difficultyFilter={difficultyFilter}
-              subjects={subjects}
-              topics={topics}
-              onSearchChange={setSearch}
-              onSubjectChange={setSubjectFilter}
-              onTopicChange={setTopicFilter}
-              onDifficultyChange={setDifficultyFilter}
-              onSelectFiltered={selectFilteredQuestions}
-              onClearFiltered={clearFilteredQuestions}
-            />
+          <QuestionBankFilters
+            search={search}
+            subjectFilter={subjectFilter}
+            topicFilter={topicFilter}
+            difficultyFilter={difficultyFilter}
+            testedFilter={testedFilter}
+            subjects={subjects}
+            topics={topics}
+            onSearchChange={setSearch}
+            onSubjectChange={setSubjectFilter}
+            onTopicChange={setTopicFilter}
+            onDifficultyChange={setDifficultyFilter}
+            onTestedChange={setTestedFilter}
+            onSelectFiltered={selectFilteredQuestions}
+            onClearFiltered={clearFilteredQuestions}
+          />
 
-            <ExamQuestionTable
-              exam={exam}
-              questions={displayedQuestions}
-              onToggleQuestion={toggleQuestion}
-              onMoveQuestion={moveQuestion}
-            />
+          <ExamQuestionTable
+            questions={displayedQuestions}
+            selectedQuestionIds={exam.questionIds}
+            usedQuestionIds={new Set(Object.keys(questionUsageMap))}
+            usageMap={questionUsageMap}
+            usageDetailsMap={questionUsageDetailsMap}
+            onQuestionUpdated={handleQuestionUpdated}
+            onToggleQuestion={toggleQuestion}
+            onMoveQuestion={moveQuestion}
+          />
 
-            <ExamEditActions
-              saving={saving}
-              onSave={saveChanges}
-              onCancel={() => router.push("/admin/exams")}
-            />
-          </div>
+          <ExamEditActions
+            saving={saving}
+            onSave={saveChanges}
+            onCancel={() => router.push("/admin/exams")}
+          />
+        </div>
       </Card>
     </main>
   );
-};
+}

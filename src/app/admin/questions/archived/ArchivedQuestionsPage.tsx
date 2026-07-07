@@ -67,7 +67,7 @@ export default function ArchivedQuestionsPage() {
         subtitle="Review and restore archived questions."
       />
 
-      <div className="action-row" style={{ marginBottom: "16px" }}>
+      <div className="action-row">
         <Link href="/admin/questions">
           <Button type="button" variant="secondary">
             Back to Question Bank

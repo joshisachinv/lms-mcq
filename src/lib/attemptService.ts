@@ -21,7 +21,11 @@ export type Attempt = {
 
 const fromDb = (row: any): Attempt => ({
   studentId: row.student_id || "",
-  studentName: row.profiles?.full_name || row.profiles?.email || "",
+  studentName:
+    row.student_name ||
+    row.profiles?.full_name ||
+    row.profiles?.email ||
+    "Unknown",
   id: row.id,
   examId: row.exam_id,
   examTitle: row.exam_title || "",
@@ -38,12 +42,13 @@ const fromDb = (row: any): Attempt => ({
 });
 
 export async function addAttempt(
-  input: Omit<Attempt, "id" | "submittedAt" | "studentName">
+  input: Omit<Attempt, "id" | "submittedAt">
 ) {
   const { data, error } = await supabase
     .from("attempts")
     .insert({
       student_id: input.studentId,
+      student_name: input.studentName,
       exam_id: input.examId,
       exam_title: input.examTitle,
       score: input.score,
@@ -85,6 +90,55 @@ export async function getAttemptsForStudent(studentId: string) {
   if (error) throw error;
 
   return (data || []).map(fromDb);
+}
+
+export type QuestionStats = {
+  timesAttempted: number;
+  correctCount: number;
+  maxTimeSpent: number;
+  minTimeSpent: number;
+};
+
+/**
+ * Aggregates every submitted attempt into per-question stats: how many times
+ * a question has been attempted, how many of those were answered correctly,
+ * and the fastest/slowest time a student spent on it. Used on the "Review
+ * Questions" page to surface which questions are easy, hard, slow, etc.
+ */
+export async function getQuestionStatsMap(): Promise<Record<string, QuestionStats>> {
+  const attempts = await getAttempts();
+  const stats: Record<string, QuestionStats> = {};
+
+  attempts.forEach((attempt) => {
+    attempt.questionsSnapshot.forEach((question) => {
+      const studentAnswers = attempt.answers?.[question.id] || [];
+      const correctAnswers = question.correctAnswers || [];
+
+      const isCorrect =
+        studentAnswers.length === correctAnswers.length &&
+        studentAnswers.every((answer) => correctAnswers.includes(answer));
+
+      const timeSpent = attempt.questionTimeSpent?.[question.id] ?? 0;
+
+      const existing = stats[question.id];
+
+      if (existing) {
+        existing.timesAttempted += 1;
+        if (isCorrect) existing.correctCount += 1;
+        existing.maxTimeSpent = Math.max(existing.maxTimeSpent, timeSpent);
+        existing.minTimeSpent = Math.min(existing.minTimeSpent, timeSpent);
+      } else {
+        stats[question.id] = {
+          timesAttempted: 1,
+          correctCount: isCorrect ? 1 : 0,
+          maxTimeSpent: timeSpent,
+          minTimeSpent: timeSpent,
+        };
+      }
+    });
+  });
+
+  return stats;
 }
 
 export async function getAttemptById(id: string) {

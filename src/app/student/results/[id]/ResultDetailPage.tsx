@@ -5,6 +5,10 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getAttemptById } from "@/lib/attemptService";
 import MathText from "@/components/math/MathText";
+import PageTitle from "@/components/ui/PageTitle";
+import Badge from "@/components/ui/Badge";
+import EmptyState from "@/components/ui/EmptyState";
+
 type Question = {
   id: string;
   subject: string;
@@ -46,57 +50,72 @@ export default function ResultDetailPage() {
   const attemptId = params.id;
 
   const [attempt, setAttempt] = useState<Attempt | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   const hasImage = (value: unknown) => {
     return typeof value === "string" && value.trim().length > 0;
   };
 
   useEffect(() => {
-  const loadAttempt = async () => {
-    try {
-      const data = await getAttemptById(attemptId);
-      setAttempt(data);
-    } catch (error) {
-      console.error(error);
-      alert("Result not found.");
-    }
-  };
+    const loadAttempt = async () => {
+      try {
+        const data = await getAttemptById(attemptId);
+        setAttempt(data);
+      } catch (error) {
+        console.error(error);
+        setNotFound(true);
+      }
+    };
 
-  loadAttempt();
-}, [attemptId]);
+    loadAttempt();
+  }, [attemptId]);
+
+  if (notFound) {
+    return (
+      <main className="page-container">
+        <PageTitle title="Result not found" />
+        <EmptyState message="We couldn't find this attempt. It may have been removed." />
+        <p className="mt-16">
+          <Link className="secondary-button" href="/student/results">
+            Back to Results
+          </Link>
+        </p>
+      </main>
+    );
+  }
 
   if (!attempt) {
     return (
-      <main style={{ padding: "40px" }}>
-        <h1>Result not found</h1>
-        <Link href="/student/results">Back to Results</Link>
+      <main className="page-container">
+        <p className="auth-loading">Loading result...</p>
       </main>
     );
   }
 
   return (
-    <main style={{ padding: "40px" }}>
-      <h1>Result Review</h1>
+    <main className="page-container">
+      <PageTitle title="Result Review" subtitle={attempt.examTitle} />
 
-      <p>
-        <strong>Exam:</strong> {attempt.examTitle}
-      </p>
+      <div className="review-summary-grid">
+        <div>
+          <strong>
+            {attempt.score} / {attempt.totalQuestions}
+          </strong>
+          <span>Score</span>
+        </div>
+        <div>
+          <strong>{new Date(attempt.submittedAt).toLocaleDateString()}</strong>
+          <span>Submitted</span>
+        </div>
+        <div>
+          <strong>{attempt.overallTimeLeft}s</strong>
+          <span>Time remaining</span>
+        </div>
+      </div>
 
-      <p>
-        <strong>Score:</strong> {attempt.score} / {attempt.totalQuestions}
-      </p>
-
-      <p>
-        <strong>Submitted:</strong>{" "}
-        {new Date(attempt.submittedAt).toLocaleString()}
-      </p>
-
-      <p>
-        <strong>Overall Time Remaining:</strong> {attempt.overallTimeLeft}s
-      </p>
-
-
-      <h2>Question Review</h2>
+      <div className="section-heading-row">
+        <h2>Question Review</h2>
+      </div>
 
       {attempt.questionsSnapshot.map((question, index) => {
         const studentAnswers = attempt.answers[question.id] || [];
@@ -107,126 +126,112 @@ export default function ResultDetailPage() {
           studentAnswers.every((answer) => correctAnswers.includes(answer));
 
         return (
-          <div
-            key={question.id}
-            style={{
-              border: "1px solid #ccc",
-              padding: "16px",
-              marginBottom: "20px",
-            }}
-          >
-            <h3>
-              Question {index + 1}: {isCorrect ? "Correct" : "Incorrect"}
-            </h3>
+          <div key={question.id} className="surface-panel review-question-card">
+            <div className="review-question-header">
+              <h3>Question {index + 1}</h3>
+              <Badge color={isCorrect ? "green" : "red"}>
+                {isCorrect ? "Correct" : "Incorrect"}
+              </Badge>
+            </div>
 
-            <p>
-              <strong>Subject:</strong> {question.subject}
-            </p>
+            <div className="review-meta-row">
+              <span>
+                <strong>Subject:</strong> {question.subject}
+              </span>
+              <span>
+                <strong>Topic:</strong> {question.topic}
+              </span>
+            </div>
 
-            <p>
-              <strong>Topic:</strong> {question.topic}
-            </p>
-
-            <p>
-              <strong>Question:</strong> <MathText text={question.questionText} />
+            <p className="review-question-text">
+              <MathText text={question.questionText} />
             </p>
 
             {hasImage(question.questionImage) && (
               <img
                 src={question.questionImage}
                 alt="Question"
-                style={{
-                  maxWidth: "400px",
-                  display: "block",
-                  marginBottom: "12px",
-                }}
+                className="exam-question-image"
               />
             )}
 
-            {["A", "B", "C", "D"].map((option) => {
-              const optionText = String(
-                question[`option${option}` as keyof Question] || ""
-              );
+            <div className="review-options">
+              {["A", "B", "C", "D"].map((option) => {
+                const optionText = String(
+                  question[`option${option}` as keyof Question] || ""
+                );
+                const optionImage = String(
+                  question[`option${option}Image` as keyof Question] || ""
+                );
 
-              const optionImage = String(
-                question[`option${option}Image` as keyof Question] || ""
-              );
+                const studentSelected = studentAnswers.includes(option);
+                const correctSelected = correctAnswers.includes(option);
 
-              const studentSelected = studentAnswers.includes(option);
-              const correctSelected = correctAnswers.includes(option);
+                const optionClass = correctSelected
+                  ? "review-option review-option-correct"
+                  : studentSelected
+                  ? "review-option review-option-incorrect"
+                  : "review-option";
 
-              return (
-                <div
-                  key={option}
-                  style={{
-                    padding: "8px",
-                    marginBottom: "6px",
-                    backgroundColor: correctSelected
-                      ? "#d4edda"
-                      : studentSelected
-                      ? "#f8d7da"
-                      : "transparent",
-                  }}
-                >
-                  <div>
-                    <strong>{option}.</strong> <MathText text={optionText} />
-                    {studentSelected && " - Student Answer"}
-                    {correctSelected && " - Correct Answer"}
+                return (
+                  <div key={option} className={optionClass}>
+                    <strong>{option}.</strong>
+                    <div>
+                      <MathText text={optionText} />
+
+                      {hasImage(optionImage) && (
+                        <img
+                          src={optionImage}
+                          alt={`Option ${option}`}
+                          className="exam-option-image"
+                        />
+                      )}
+
+                      {studentSelected && (
+                        <span className="review-option-tag review-option-tag-incorrect">
+                          {correctSelected ? "" : "Your answer"}
+                        </span>
+                      )}
+                      {correctSelected && (
+                        <span className="review-option-tag review-option-tag-correct">
+                          Correct answer{studentSelected ? " · your answer" : ""}
+                        </span>
+                      )}
+                    </div>
                   </div>
+                );
+              })}
+            </div>
 
-                  {hasImage(optionImage) && (
-                    <img
-                      src={optionImage}
-                      alt={`Option ${option}`}
-                      style={{
-                        maxWidth: "200px",
-                        display: "block",
-                        marginTop: "6px",
-                      }}
-                    />
-                  )}
-                </div>
-              );
-            })}
+            <div className="review-footer-row">
+              <span>
+                <strong>Your answer:</strong>{" "}
+                {studentAnswers.length > 0 ? studentAnswers.join(", ") : "Not answered"}
+              </span>
+              <span>
+                <strong>Correct answer:</strong> {correctAnswers.join(", ")}
+              </span>
+              <span>
+                <strong>Time spent:</strong>{" "}
+                {attempt.questionTimeSpent?.[question.id] ?? 0}s
+              </span>
+              <span>
+                <strong>Time remaining:</strong>{" "}
+                {attempt.questionTimeLeft?.[question.id] ?? 0}s
+              </span>
+            </div>
 
-            <p>
-              <strong>Student Answer:</strong>{" "}
-              {studentAnswers.length > 0
-                ? studentAnswers.join(", ")
-                : "Not answered"}
-            </p>
-
-            <p>
-              <strong>Correct Answer:</strong> {correctAnswers.join(", ")}
-            </p>
-
-            <p>
-              <strong>Time Spent:</strong>{" "}
-              {attempt.questionTimeSpent?.[question.id] ?? 0}s
-            </p>
-
-            <p>
-              <strong>Question Time Remaining:</strong>{" "}
-              {attempt.questionTimeLeft?.[question.id] ?? 0}s
-            </p>
-            
-            <h4>Scratchpad for this question</h4>
-
+            <div className="form-section-title mt-16">Scratchpad</div>
             {attempt.scratchpads?.[question.id] ? (
               <img
                 src={attempt.scratchpads[question.id]}
                 alt={`Scratchpad for question ${index + 1}`}
-                style={{
-                  maxWidth: "450px",
-                  border: "1px solid #ccc",
-                  background: "#ffffff",
-                  display: "block",
-                }}
+                className="review-scratchpad-image"
               />
             ) : (
-              <p>No scratchpad used for this question.</p>
+              <p className="exam-muted">No scratchpad used for this question.</p>
             )}
-            
+
             <div className="explanation">
               <strong>Explanation:</strong>{" "}
               {question.explanation ? (
@@ -240,7 +245,9 @@ export default function ResultDetailPage() {
       })}
 
       <p>
-        <Link href="/student/results">Back to Results</Link>
+        <Link className="secondary-button" href="/student/results">
+          Back to Results
+        </Link>
       </p>
     </main>
   );

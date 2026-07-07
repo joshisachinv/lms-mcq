@@ -6,7 +6,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-role="admin">
       <PageHeader
         title="LMS MCQ"
         subtitle="Administrator"

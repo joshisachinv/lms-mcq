@@ -20,6 +20,7 @@ export type Question = {
   explanation: string;
   timerSeconds: number;
   isArchived: boolean;
+  isTested?: boolean;
 };
 
 const fromDb = (row: any): Question => ({

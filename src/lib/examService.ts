@@ -172,3 +172,40 @@ export async function updateExam(input: Exam) {
     if (insertError) throw insertError;
   }
 }
+
+export async function getQuestionUsageMap(excludeExamId?: string) {
+  let query = supabase.from("exam_questions").select("question_id, exam_id");
+
+  if (excludeExamId) {
+    query = query.neq("exam_id", excludeExamId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw error;
+
+  return (data || []).reduce<Record<string, number>>((acc, row) => {
+    acc[row.question_id] = (acc[row.question_id] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+export async function getQuestionUsageDetailsMap(excludeExamId?: string) {
+  let query = supabase
+    .from("exam_questions")
+    .select("question_id, exams(title)");
+
+  if (excludeExamId) {
+    query = query.neq("exam_id", excludeExamId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw error;
+
+  return (data || []).reduce<Record<string, string[]>>((acc, row: any) => {
+    const title = row.exams?.title || "Untitled exam";
+    acc[row.question_id] = [...(acc[row.question_id] || []), title];
+    return acc;
+  }, {});
+}

@@ -1,10 +1,13 @@
 import Link from "next/link";
+import PageTitle from "@/components/ui/PageTitle";
 
 export default function StudentDashboardPage() {
   return (
     <main className="page-container">
-      <h1>Student Dashboard</h1>
-      <p>Take active exams and review your previous results.</p>
+      <PageTitle
+        title="Student Dashboard"
+        subtitle="Take active exams and review your previous results."
+      />
 
       <div className="card-grid">
         <div className="dashboard-card">

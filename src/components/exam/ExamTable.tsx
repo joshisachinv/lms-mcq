@@ -111,7 +111,7 @@ export default function ExamTable() {
 
   return (
     <>
-      <div className="form-card" style={{ marginBottom: "16px" }}>
+      <div className="form-card filter-panel">
         <div className="form-grid">
           <Input
             label="Search"
