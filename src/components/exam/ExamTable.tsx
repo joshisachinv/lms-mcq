@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useToast } from "@/components/ui/ToastProvider";
 
 import {
   archiveExam,
@@ -21,7 +22,7 @@ import DataTable from "@/components/datatable/DataTable";
 export default function ExamTable() {
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const toast = useToast();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
