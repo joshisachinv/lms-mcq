@@ -92,12 +92,16 @@ export default function TakeExamPage() {
           examQuestions = shuffleQuestions(examQuestions);
         }
 
-        const initialQuestionTimeLeft: Record<string, number> = {};
+        const initialAnswers: Record<string, string[]> = {};
+        const initialScratchpads: Record<string, string> = {};
         const initialQuestionTimeSpent: Record<string, number> = {};
+        const initialQuestionTimeLeft: Record<string, number> = {};
 
-        examQuestions.forEach((question) => {
-          initialQuestionTimeLeft[question.id] = question.timerSeconds || 60;
+        questions.forEach((question: Question) => {
+          initialAnswers[question.id] = [];
+          initialScratchpads[question.id] = "";
           initialQuestionTimeSpent[question.id] = 0;
+          initialQuestionTimeLeft[question.id] = question.timerSeconds || 60;
         });
 
         let savedDraft: any = null;
@@ -218,7 +222,7 @@ export default function TakeExamPage() {
 
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
-      event.returnValue = "";
+      event.preventDefault();
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
@@ -274,9 +278,7 @@ export default function TakeExamPage() {
     return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
   };
 
-  const hasImage = (value: unknown) => {
-    return typeof value === "string" && value.trim().length > 0;
-  };
+  
 
   const toggleAnswer = (option: string) => {
     if (!currentQuestion) return;
