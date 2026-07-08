@@ -7,8 +7,10 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import PageTitle from "@/components/ui/PageTitle";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function LoginPage() {
+  const toast = useToast();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -20,19 +22,19 @@ export default function LoginPage() {
 
       if (error) {
         console.error("Supabase login error:", error);
-        alert(error.message);
+        toast.error(error.message);
         return;
       }
 
       if (!data.user) {
-        alert("No user returned from Supabase.");
+        toast.error("No user returned from Supabase.");
         return;
       }
 
       const role = await getUserRole(data.user.id);
 
       if (!role) {
-        alert("Login succeeded, but no profile role was found.");
+        toast.error("Login succeeded, but no profile role was found.");
         return;
       }
 
@@ -46,11 +48,11 @@ export default function LoginPage() {
         return;
       }
 
-      alert(`Unknown role: ${role}`);
+      toast.error(`Unknown role: ${role}`);
       
     } catch (error) {
       console.error("Login failed:", error);
-      alert("Login failed. Please try again.");
+      toast.error("Login failed. Please try again.");
     }
   };
 

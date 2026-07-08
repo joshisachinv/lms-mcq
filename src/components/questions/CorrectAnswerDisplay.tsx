@@ -56,11 +56,12 @@ export default function CorrectAnswerDisplay({
                 <button
                   type="button"
                   className="question-image-button"
-                  onDoubleClick={(event) => {
+                  onClick={(event) => {
+                    event.preventDefault();
                     event.stopPropagation();
                     onOpenImage?.(option.imageField, `Correct answer ${option.label} image`);
                   }}
-                  title="Double-click to zoom, replace, or remove answer image"
+                  title="Click to zoom, replace, or remove answer image"
                 >
                   <img src={image} alt={`Correct answer ${option.label}`} className="correct-answer-image" />
                 </button>

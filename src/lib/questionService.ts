@@ -108,6 +108,49 @@ export async function getQuestionsByIds(ids: string[]) {
   return (data || []).map(fromDb);
 }
 
+/**
+ * Fetches question content for a student taking an exam via the
+ * `get_questions_for_exam` Postgres function (see
+ * supabase/migrations/0001_secure_exam_scoring.sql), which never returns
+ * `correct_answers`. Use this — never `getQuestionsByIds` — anywhere a
+ * student is actively answering an exam, so the answer key never reaches
+ * the browser before submission.
+ *
+ * `correctAnswers` on the returned questions is always `[]`; do not rely
+ * on it for anything (grading happens server-side in submitExamAttempt).
+ */
+export async function getQuestionsForExamTaking(examId: string) {
+  const { data, error } = await supabase.rpc("get_questions_for_exam", {
+    p_exam_id: examId,
+  });
+
+  if (error) throw error;
+
+  return (data || []).map(
+    (row: any): Question => ({
+      id: row.id,
+      subject: row.subject,
+      topic: row.topic || "",
+      difficulty: row.difficulty || "",
+      questionType: row.question_type,
+      questionText: row.question_text,
+      questionImage: row.question_image || "",
+      optionA: row.option_a || "",
+      optionAImage: row.option_a_image || "",
+      optionB: row.option_b || "",
+      optionBImage: row.option_b_image || "",
+      optionC: row.option_c || "",
+      optionCImage: row.option_c_image || "",
+      optionD: row.option_d || "",
+      optionDImage: row.option_d_image || "",
+      correctAnswers: [],
+      explanation: row.explanation || "",
+      timerSeconds: row.timer_seconds || 60,
+      isArchived: false,
+    })
+  );
+}
+
 export async function addQuestion(question: Omit<Question, "id">) {
   const { data, error } = await supabase
     .from("questions")

@@ -11,8 +11,10 @@ import EmptyState from "@/components/ui/EmptyState";
 import PageTitle from "@/components/ui/PageTitle";
 import Table from "@/components/ui/Table";
 import * as XLSX from "xlsx";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function AdminResultsPage() {
+  const toast = useToast();
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -48,7 +50,7 @@ export default function AdminResultsPage() {
         setAttempts(data);
       } catch (error) {
         console.error(error);
-        alert("Failed to load results.");
+        toast.error("Failed to load results.");
       } finally {
         setLoading(false);
       }

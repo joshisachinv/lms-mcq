@@ -16,8 +16,10 @@ import EmptyState from "@/components/ui/EmptyState";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import QuestionGrid from "@/components/questions/QuestionGrid";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function QuestionTable() {
+  const toast = useToast();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [questionUsageMap, setQuestionUsageMap] = useState<Record<string, number>>({});
@@ -43,7 +45,7 @@ export default function QuestionTable() {
       setQuestionUsageDetailsMap(usageDetailsMap);
     } catch (error) {
       console.error(error);
-      alert("Failed to load questions.");
+      toast.error("Failed to load questions.");
     } finally {
       setLoading(false);
     }
@@ -144,7 +146,7 @@ export default function QuestionTable() {
       await loadQuestions();
     } catch (error) {
       console.error(error);
-      alert("Failed to archive question.");
+      toast.error("Failed to archive question.");
     }
   };
 
@@ -154,7 +156,7 @@ export default function QuestionTable() {
       await loadQuestions();
     } catch (error) {
       console.error(error);
-      alert("Failed to duplicate question.");
+      toast.error("Failed to duplicate question.");
     }
   };
 

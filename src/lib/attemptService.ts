@@ -41,28 +41,34 @@ const fromDb = (row: any): Attempt => ({
   overallTimeSpent: row.overall_time_spent || 0,
 });
 
-export async function addAttempt(
-  input: Omit<Attempt, "id" | "submittedAt">
-) {
-  const { data, error } = await supabase
-    .from("attempts")
-    .insert({
-      student_id: input.studentId,
-      student_name: input.studentName,
-      exam_id: input.examId,
-      exam_title: input.examTitle,
-      score: input.score,
-      total_questions: input.totalQuestions,
-      answers: input.answers,
-      scratchpads: input.scratchpads,
-      question_time_spent: input.questionTimeSpent,
-      question_time_left: input.questionTimeLeft,
-      overall_time_spent: input.overallTimeSpent,
-      overall_time_left: input.overallTimeLeft,
-      questions_snapshot: input.questionsSnapshot,
-    })
-    .select()
-    .single();
+/**
+ * Submits a completed exam attempt for grading. This calls the
+ * `submit_exam_attempt` Postgres function (see
+ * supabase/migrations/0001_secure_exam_scoring.sql), which looks up the
+ * correct answers and computes the score server-side — the client only
+ * ever sends the student's raw answers and timing data, never a score.
+ *
+ * This replaces the old addAttempt(), which trusted a client-computed
+ * `score` field and is no longer used.
+ */
+export async function submitExamAttempt(input: {
+  examId: string;
+  answers: Record<string, string[]>;
+  scratchpads: Record<string, string>;
+  questionTimeSpent: Record<string, number>;
+  questionTimeLeft: Record<string, number>;
+  overallTimeSpent: number;
+  overallTimeLeft: number;
+}) {
+  const { data, error } = await supabase.rpc("submit_exam_attempt", {
+    p_exam_id: input.examId,
+    p_answers: input.answers,
+    p_scratchpads: input.scratchpads,
+    p_question_time_spent: input.questionTimeSpent,
+    p_question_time_left: input.questionTimeLeft,
+    p_overall_time_spent: input.overallTimeSpent,
+    p_overall_time_left: input.overallTimeLeft,
+  });
 
   if (error) throw error;
 

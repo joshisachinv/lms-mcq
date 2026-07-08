@@ -10,6 +10,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import PageTitle from "@/components/ui/PageTitle";
 import Table from "@/components/ui/Table";
 import MathText from "@/components/math/MathText";
+import { useToast } from "@/components/ui/ToastProvider";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -73,6 +74,7 @@ function validate(q: ImportQuestion): string[] {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function UploadQuestionsPage() {
+  const toast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const zipInputRef  = useRef<HTMLInputElement>(null);
 
@@ -131,14 +133,14 @@ export default function UploadQuestionsPage() {
 
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
     if (!["xlsx", "xls", "csv"].includes(ext)) {
-      alert("Unsupported file. Please upload .xlsx, .xls or .csv.");
+      toast.error("Unsupported file. Please upload .xlsx, .xls or .csv.");
       return;
     }
 
     const buf       = await file.arrayBuffer();
     const wb        = XLSX.read(buf, { type: "array" });
     const ws        = wb.Sheets[wb.SheetNames[0]];
-    if (!ws) { alert("File contains no worksheet."); return; }
+    if (!ws) { toast.error("File contains no worksheet."); return; }
 
     const rows      = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "", raw: false });
     const headerRow = (XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, blankrows: false })[0] || []) as unknown[];
@@ -237,7 +239,7 @@ export default function UploadQuestionsPage() {
 
   const save = async () => {
     if (toSaveCount === 0) {
-      alert("No questions to save. Resolve validation issues or select duplicate overrides.");
+      toast.error("No questions to save. Resolve validation issues or select duplicate overrides.");
       return;
     }
 

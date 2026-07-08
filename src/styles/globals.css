@@ -5,7 +5,7 @@
      1.  Theme tokens (shared + per-role)
      2.  Base / reset
      3.  App shell & header (role-aware)
-     4.  Navigation
+     4.  Navigationmage-modal-backdrop
      5.  Page structure (container, titles, section headings)
      6.  Buttons
      7.  Forms
@@ -2238,7 +2238,7 @@ input[type="range"] {
 .image-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2814,5 +2814,87 @@ input[type="range"] {
 
   .result-review-toolbar-controls {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ─── Toast notifications (replaces window.alert()) ───────────────────── */
+
+.toast-stack {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: min(360px, calc(100vw - 32px));
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+  font-size: 14px;
+  line-height: 1.4;
+  animation: toast-in 0.18s ease-out;
+  border: 1px solid transparent;
+}
+
+.toast-success {
+  background: var(--success-soft);
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.toast-error {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.toast-info {
+  background: #eef2ff;
+  color: #3730a3;
+  border-color: #6366f1;
+}
+
+.toast-message {
+  flex: 1;
+}
+
+.toast-dismiss {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  color: inherit;
+  opacity: 0.6;
+  padding: 0;
+}
+
+.toast-dismiss:hover {
+  opacity: 1;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 480px) {
+  .toast-stack {
+    left: 16px;
+    right: 16px;
+    max-width: none;
   }
 }

@@ -13,8 +13,10 @@ import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import PageTitle from "@/components/ui/PageTitle";
 import Table from "@/components/ui/Table";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function ArchivedQuestionsPage() {
+  const toast = useToast();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,7 +28,7 @@ export default function ArchivedQuestionsPage() {
       setQuestions(data.filter((question) => question.isArchived));
     } catch (error) {
       console.error(error);
-      alert("Failed to load archived questions.");
+      toast.error("Failed to load archived questions.");
     } finally {
       setLoading(false);
     }
@@ -45,7 +47,7 @@ export default function ArchivedQuestionsPage() {
       await loadArchivedQuestions();
     } catch (error) {
       console.error(error);
-      alert("Failed to restore question.");
+      toast.error("Failed to restore question.");
     }
   };
 

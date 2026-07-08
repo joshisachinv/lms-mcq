@@ -13,8 +13,10 @@ import { getQuestions, Question } from "@/lib/questionService";
 import Card from "@/components/ui/Card";
 import PageTitle from "@/components/ui/PageTitle";
 import SelectedQuestionSummary from "@/components/questions/SelectedQuestionSummary";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function CreateExamPage() {
+  const toast = useToast();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [overallTimerSeconds, setOverallTimerSeconds] = useState(1800);
@@ -50,7 +52,7 @@ export default function CreateExamPage() {
         setQuestionUsageDetailsMap(usageDetailsMap);
       } catch (error) {
         console.error(error);
-        alert("Failed to load questions.");
+        toast.error("Failed to load questions.");
       }
     };
 
@@ -188,12 +190,12 @@ export default function CreateExamPage() {
 
   const createExam = async () => {
     if (!title.trim()) {
-      alert("Please enter an exam title.");
+      toast.error("Please enter an exam title.");
       return;
     }
 
     if (selectedQuestions.length === 0) {
-      alert("Please select at least one question.");
+      toast.error("Please select at least one question.");
       return;
     }
 
@@ -209,7 +211,7 @@ export default function CreateExamPage() {
         questionIds: selectedQuestions,
       });
 
-      alert("Exam created.");
+      toast.success("Exam created.");
 
       setTitle("");
       setDescription("");
@@ -225,7 +227,7 @@ export default function CreateExamPage() {
       setViewMode("all");
     } catch (error) {
       console.error(error);
-      alert("Failed to create exam.");
+      toast.error("Failed to create exam.");
     }
   };
 

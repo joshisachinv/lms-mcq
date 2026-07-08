@@ -17,8 +17,10 @@ import {
   updateQuestion,
   Question,
 } from "@/lib/questionService";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function EditQuestionPage() {
+  const toast = useToast();
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const id = params.id;
@@ -40,7 +42,7 @@ export default function EditQuestionPage() {
         });
       } catch (error) {
         console.error(error);
-        alert("Failed to load question.");
+        toast.error("Failed to load question.");
       }
     };
 
@@ -122,7 +124,7 @@ export default function EditQuestionPage() {
 
     await updateQuestion(updatedQuestion);
 
-    alert("Question updated.");
+    toast.success("Question updated.");
     router.push("/admin/questions");
   };
   

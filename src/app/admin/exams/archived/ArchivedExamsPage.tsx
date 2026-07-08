@@ -14,8 +14,10 @@ import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import PageTitle from "@/components/ui/PageTitle";
 import Table from "@/components/ui/Table";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function ArchivedExamsPage() {
+  const toast = useToast();
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +29,7 @@ export default function ArchivedExamsPage() {
       setExams(data.filter((exam) => exam.isArchived));
     } catch (error) {
       console.error(error);
-      alert("Failed to load archived exams.");
+      toast.error("Failed to load archived exams.");
     } finally {
       setLoading(false);
     }
@@ -46,7 +48,7 @@ export default function ArchivedExamsPage() {
       await loadArchivedExams();
     } catch (error) {
       console.error(error);
-      alert("Failed to restore exam.");
+      toast.error("Failed to restore exam.");
     }
   };
 

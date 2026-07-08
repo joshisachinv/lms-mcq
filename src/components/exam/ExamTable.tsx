@@ -30,7 +30,7 @@ export default function ExamTable() {
 
     try {
       await navigator.clipboard.writeText(examUrl);
-      alert(`Exam link copied:\n${examUrl}`);
+      toast.success(`Exam link copied: ${examUrl}`);
     } catch (error) {
       console.error(error);
       prompt("Copy link:", examUrl);
@@ -43,7 +43,7 @@ export default function ExamTable() {
       setExams(data);
     } catch (error) {
       console.error(error);
-      alert("Failed to load exams.");
+      toast.error("Failed to load exams.");
     } finally {
       setLoading(false);
     }
@@ -74,7 +74,7 @@ export default function ExamTable() {
       await loadExams();
     } catch (error) {
       console.error(error);
-      alert("Failed to update exam status.");
+      toast.error("Failed to update exam status.");
     }
   };
 
@@ -87,7 +87,7 @@ export default function ExamTable() {
       await loadExams();
     } catch (error) {
       console.error(error);
-      alert("Failed to archive exam.");
+      toast.error("Failed to archive exam.");
     }
   };
 
@@ -97,7 +97,7 @@ export default function ExamTable() {
       await loadExams();
     } catch (error) {
       console.error(error);
-      alert("Failed to duplicate exam.");
+      toast.error("Failed to duplicate exam.");
     }
   };
 

@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signInAsAdmin, signInAsStudent } from "@/lib/authService";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function HomePage() {
+  const toast = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState<"admin" | "student" | null>(null);
 
@@ -16,7 +18,7 @@ export default function HomePage() {
 
       if (error) {
         console.error(`Auto sign-in failed for ${role}:`, error);
-        alert(`Could not open the ${role} area: ${error.message}`);
+        toast.error(`Could not open the ${role} area: ${error.message}`);
         setLoading(null);
         return;
       }
@@ -24,7 +26,7 @@ export default function HomePage() {
       router.push(role === "admin" ? "/admin" : "/student");
     } catch (err) {
       console.error("Auto sign-in failed:", err);
-      alert("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
       setLoading(null);
     }
   };

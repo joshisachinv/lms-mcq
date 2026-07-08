@@ -13,6 +13,7 @@ import CorrectAnswerDisplay, {
 import ImagePreviewModal from "@/components/questions/ImagePreviewModal";
 import InlineAnswerEditor from "@/components/questions/InlineAnswerEditor";
 import InlineQuestionEditor from "@/components/questions/InlineQuestionEditor";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export type QuestionGridStats = {
   timesAttempted: number;
@@ -107,6 +108,7 @@ export default function QuestionGrid({
   pageSize = 100,
 }: Props) {
   const [editing, setEditing] = useState<EditingCell>(null);
+  const toast = useToast();
   const [draftQuestion, setDraftQuestion] = useState<Question | null>(null);
   const [savingId, setSavingId] = useState<string>("");
   const [imageTarget, setImageTarget] = useState<ImageTarget>(null);
@@ -182,7 +184,7 @@ export default function QuestionGrid({
       cancelEdit();
     } catch (error) {
       console.error(error);
-      alert("Failed to update question.");
+      toast.error("Failed to update question.");
     } finally {
       setSavingId("");
     }
@@ -202,7 +204,7 @@ export default function QuestionGrid({
       setImageTarget({ ...imageTarget, question: updated });
     } catch (error) {
       console.error(error);
-      alert("Failed to replace image.");
+      toast.error("Failed to replace image.");
     } finally {
       setUploadingImage(false);
     }
@@ -221,7 +223,7 @@ export default function QuestionGrid({
       setImageTarget(null);
     } catch (error) {
       console.error(error);
-      alert("Failed to remove image.");
+      toast.error("Failed to remove image.");
     } finally {
       setUploadingImage(false);
     }
@@ -322,10 +324,12 @@ export default function QuestionGrid({
       <button
         type="button"
         className="question-image-button"
-        onDoubleClick={() =>
-          openImage(question, "questionImage", "Question image")
-        }
-        title="Double-click to zoom, replace, or remove image"
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          openImage(question, "questionImage", "Question image");
+        }}
+        title="Click to zoom, replace, or remove image"
       >
         <img
           src={question.questionImage}

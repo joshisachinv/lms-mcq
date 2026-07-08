@@ -17,8 +17,10 @@ import { getQuestions, Question } from "@/lib/questionService";
 import Card from "@/components/ui/Card";
 import PageTitle from "@/components/ui/PageTitle";
 import SelectedQuestionSummary from "@/components/questions/SelectedQuestionSummary";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function EditExamPage() {
+  const toast = useToast();
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const examId = params.id;
@@ -55,7 +57,7 @@ export default function EditExamPage() {
         setQuestionUsageDetailsMap(usageDetailsMap);
       } catch (error) {
         console.error(error);
-        alert("Failed to load exam.");
+        toast.error("Failed to load exam.");
         setExam(null);
       }
     };
@@ -219,23 +221,23 @@ export default function EditExamPage() {
     if (!exam) return;
 
     if (!exam.title.trim()) {
-      alert("Please enter an exam title.");
+      toast.error("Please enter an exam title.");
       return;
     }
 
     if (exam.questionIds.length === 0) {
-      alert("Please select at least one question.");
+      toast.error("Please select at least one question.");
       return;
     }
 
     try {
       setSaving(true);
       await updateExam(exam);
-      alert("Exam updated.");
+      toast.success("Exam updated.");
       router.push("/admin/exams");
     } catch (error) {
       console.error(error);
-      alert("Failed to update exam.");
+      toast.error("Failed to update exam.");
     } finally {
       setSaving(false);
     }

@@ -9,8 +9,10 @@ import { getAttempts, Attempt } from "@/lib/attemptService";
 import EmptyState from "@/components/ui/EmptyState";
 import PageTitle from "@/components/ui/PageTitle";
 import Table from "@/components/ui/Table";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function StudentExamsPage() {
+  const toast = useToast();
   const [activeExams, setActiveExams] = useState<Exam[]>([]);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +31,7 @@ export default function StudentExamsPage() {
         setAttempts(attemptData);
       } catch (error) {
         console.error(error);
-        alert("Failed to load exams.");
+        toast.error("Failed to load exams.");
       } finally {
         setLoading(false);
       }

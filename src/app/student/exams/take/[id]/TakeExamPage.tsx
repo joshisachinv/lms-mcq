@@ -10,14 +10,16 @@ import ExamHeader from "@/components/exam/ExamHeader";
 import QuestionNavigator from "@/components/exam/QuestionNavigator";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { getExamById, Exam } from "@/lib/examService";
-import { getQuestionsByIds, Question } from "@/lib/questionService";
-import { addAttempt } from "@/lib/attemptService";
+import { getQuestionsForExamTaking, Question } from "@/lib/questionService";
+import { submitExamAttempt } from "@/lib/attemptService";
+import { useToast } from "@/components/ui/ToastProvider";
 import Dialog from "@/components/ui/Dialog";
 
 export default function TakeExamPage() {
+  const toast = useToast();
   const params = useParams<{ id: string }>();
   const examId = params.id;
-  const { user, loading: userLoading, profile} = useAuth();
+  const { user, loading: userLoading } = useAuth();
 
   const [exam, setExam] = useState<Exam | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -75,24 +77,16 @@ export default function TakeExamPage() {
     if (userLoading) return;
 
     if (!user) {
-      alert("Please log in again.");
+      toast.error("Please log in again.");
       return;
     }
 
     const loadExam = async () => {
       try {
         const foundExam = await getExamById(examId);
-        const examQuestionsUnordered = await getQuestionsByIds(
-          foundExam.questionIds
-        );
-
-        const questionsById = new Map(
-          examQuestionsUnordered.map((question) => [question.id, question])
-        );
-
-        let examQuestions = foundExam.questionIds
-          .map((questionId) => questionsById.get(questionId))
-          .filter(Boolean) as Question[];
+        // Never fetch correct answers before submission — see
+        // supabase/migrations/0001_secure_exam_scoring.sql.
+        let examQuestions = await getQuestionsForExamTaking(examId);
 
         if (foundExam.randomizeQuestions) {
           examQuestions = shuffleQuestions(examQuestions);
@@ -131,7 +125,7 @@ export default function TakeExamPage() {
         setQuestionTimeSpent({ ...initialQuestionTimeSpent, ...savedDraft?.questionTimeSpent });
       } catch (error) {
         console.error(error);
-        alert("Failed to load exam.");
+        toast.error("Failed to load exam.");
       }
     };
 
@@ -338,41 +332,26 @@ export default function TakeExamPage() {
 
     setSubmitting(true);
 
-    let total = 0;
-
-    questions.forEach((question) => {
-      const studentAnswers = answers[question.id] || [];
-      const correctAnswers = question.correctAnswers || [];
-
-      const isCorrect =
-        studentAnswers.length === correctAnswers.length &&
-        studentAnswers.every((answer) => correctAnswers.includes(answer));
-
-      if (isCorrect) total += 1;
-    });
-
     try {
-      await addAttempt({
-        studentId: user.id,
-        studentName: profile?.fullName || user.email || "Student",
+      // Grading happens entirely server-side: we send only the student's
+      // raw answers and timing data. The returned attempt already has the
+      // real score and a snapshot with correct answers for the results
+      // page — see supabase/migrations/0001_secure_exam_scoring.sql.
+      const attempt = await submitExamAttempt({
         examId: exam.id,
-        examTitle: exam.title,
-        score: total,
-        totalQuestions: questions.length,
         answers,
         scratchpads,
         questionTimeSpent,
         questionTimeLeft,
-        overallTimeLeft: exam.isTimed ? overallTimeLeft : 0,
         overallTimeSpent,
-        questionsSnapshot: questions,
+        overallTimeLeft: exam.isTimed ? overallTimeLeft : 0,
       });
 
       if (autosaveKey) {
         window.localStorage.removeItem(autosaveKey);
       }
 
-      setScore(total);
+      setScore(attempt.score);
 
       if (pendingNavigationHref) {
         bypassLeaveWarningRef.current = true;
@@ -380,7 +359,7 @@ export default function TakeExamPage() {
       }
     } catch (error) {
       console.error(error);
-      alert("Failed to save exam attempt.");
+      toast.error("Failed to save exam attempt.");
       setSubmitting(false);
     }
   };

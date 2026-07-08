@@ -10,8 +10,10 @@ import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import PageTitle from "@/components/ui/PageTitle";
 import Table from "@/components/ui/Table";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function StudentResultsPage() {
+  const toast = useToast();
   const { user, loading: userLoading } = useAuth();
   const [attempts, setAttempts] = useState<Attempt[]>([]);
 
@@ -24,7 +26,7 @@ export default function StudentResultsPage() {
         setAttempts(data);
       } catch (error) {
         console.error(error);
-        alert("Failed to load results.");
+        toast.error("Failed to load results.");
       }
     };
 

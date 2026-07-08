@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import Button from "@/components/ui/Button";
 
 type Props = {
@@ -19,12 +20,16 @@ export default function ImagePreviewModal({
   onReplace,
   onRemove,
 }: Props) {
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div className="image-modal-backdrop" role="dialog" aria-modal="true">
-      <div className="image-modal-card">
+      <div className="image-modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="image-modal-header">
           <strong>{title}</strong>
-          <Button variant="secondary" onClick={onClose}>Close</Button>
+          <Button variant="secondary" onClick={onClose}>
+            Close
+          </Button>
         </div>
 
         <div className="image-modal-body">
@@ -40,13 +45,19 @@ export default function ImagePreviewModal({
                 accept="image/*"
                 hidden
                 disabled={uploading}
-                onChange={(event) => onReplace?.(event.target.files?.[0] || null)}
+                onChange={(event) =>
+                  onReplace?.(event.target.files?.[0] || null)
+                }
               />
             </label>
-            <Button variant="danger" onClick={onRemove} disabled={uploading}>Remove Image</Button>
+
+            <Button variant="danger" onClick={onRemove} disabled={uploading}>
+              Remove Image
+            </Button>
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

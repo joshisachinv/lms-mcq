@@ -11,6 +11,7 @@ import Input from "@/components/ui/Input";
 import PageTitle from "@/components/ui/PageTitle";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
+import { useToast } from "@/components/ui/ToastProvider";
 
 type QuestionFormData = {
   subject: string;
@@ -34,6 +35,7 @@ type QuestionFormData = {
 };
 
 export default function QuestionForm() {
+  const toast = useToast();
   const [questionType, setQuestionType] = useState("single");
   const [saving, setSaving] = useState(false);
 
@@ -44,17 +46,17 @@ export default function QuestionForm() {
     const correctAnswers = data.getAll("correctAnswer").map(String);
 
     if (!String(data.get("subject") || "").trim()) {
-      alert("Please enter a subject.");
+      toast.error("Please enter a subject.");
       return;
     }
 
     if (!String(data.get("questionText") || "").trim()) {
-      alert("Please enter question text.");
+      toast.error("Please enter question text.");
       return;
     }
 
     if (correctAnswers.length === 0) {
-      alert("Please select at least one correct answer.");
+      toast.error("Please select at least one correct answer.");
       return;
     }
 
@@ -104,12 +106,12 @@ export default function QuestionForm() {
 
       await addQuestion(question);
 
-      alert("Question saved.");
+      toast.success("Question saved.");
       form.reset();
       setQuestionType("single");
     } catch (error) {
       console.error(error);
-      alert("Failed to save question.");
+      toast.error("Failed to save question.");
     } finally {
       setSaving(false);
     }

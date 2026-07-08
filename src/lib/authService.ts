@@ -14,16 +14,41 @@ export async function signIn(email: string, password: string) {
   });
 }
 
+/**
+ * "One-click demo" sign-in used by the landing page. The actual credentials
+ * never reach the browser: they live only in server-only env vars read by
+ * /api/auth/demo-login, which returns just a session for us to adopt.
+ */
+async function signInWithDemoRole(role: "admin" | "student") {
+  const response = await fetch("/api/auth/demo-login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ role }),
+  });
+
+  const body = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    return {
+      data: { user: null, session: null },
+      error: new Error(body?.error || "Demo login failed."),
+    };
+  }
+
+  const { data, error } = await supabase.auth.setSession({
+    access_token: body.access_token,
+    refresh_token: body.refresh_token,
+  });
+
+  return { data, error };
+}
+
 export async function signInAsAdmin() {
-  const email = process.env.NEXT_PUBLIC_DEMO_ADMIN_EMAIL!;
-  const password = process.env.NEXT_PUBLIC_DEMO_ADMIN_PASSWORD!;
-  return supabase.auth.signInWithPassword({ email, password });
+  return signInWithDemoRole("admin");
 }
 
 export async function signInAsStudent() {
-  const email = process.env.NEXT_PUBLIC_DEMO_STUDENT_EMAIL!;
-  const password = process.env.NEXT_PUBLIC_DEMO_STUDENT_PASSWORD!;
-  return supabase.auth.signInWithPassword({ email, password });
+  return signInWithDemoRole("student");
 }
 
 export async function signOut() {

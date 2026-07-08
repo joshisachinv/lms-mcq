@@ -10,9 +10,11 @@ import EmptyState from "@/components/ui/EmptyState";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import QuestionGrid from "@/components/questions/QuestionGrid";
+import { useToast } from "@/components/ui/ToastProvider";
 
 
 export default function QuestionReviewTable() {
+  const toast = useToast();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [questionUsageMap, setQuestionUsageMap] = useState<Record<string, number>>({});
@@ -41,7 +43,7 @@ export default function QuestionReviewTable() {
       setQuestionStatsMap(statsMap);
     } catch (error) {
       console.error(error);
-      alert("Failed to load question performance data.");
+      toast.error("Failed to load question performance data.");
     } finally {
       setLoading(false);
     }
