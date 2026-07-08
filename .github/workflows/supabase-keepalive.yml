@@ -1,40 +1,19 @@
 name: Supabase keep-alive
 
-# Supabase's free tier automatically pauses a project after 7 days with no
-# API activity (see https://supabase.com/docs/guides/platform/going-into-prod
-# and the project's own pricing page for current limits). For an exam
-# platform that may go quiet between semesters/terms, that's a real risk —
-# a project could be paused when a student tries to sit an exam.
-#
-# This workflow sends one lightweight, read-only REST request every 3 days,
-# which is enough to reset Supabase's inactivity clock.
-#
-# Setup:
-#   1. In your GitHub repo, go to Settings → Secrets and variables → Actions.
-#   2. Add two repository secrets:
-#        SUPABASE_URL          e.g. https://xxxxxxxx.supabase.co
-#        SUPABASE_ANON_KEY      your project's anon/public API key
-#      (Both are already public-safe values — they're the same ones used
-#      in NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY.)
-#   3. That's it — this runs on the schedule below with no further setup.
-#
-# If you upgrade to Supabase Pro, projects no longer pause and this
-# workflow is no longer necessary (safe to delete or disable).
-
 on:
   schedule:
-    # Every 3 days at 04:00 UTC — comfortably inside the 7-day pause window.
     - cron: "0 4 */3 * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 jobs:
   ping:
     runs-on: ubuntu-latest
+
     steps:
-      - - name: Ping Supabase REST endpoint
-          run: |
-            curl --fail --silent --show-error \
-              --max-time 15 \
-              -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-              -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
-              "${{ secrets.SUPABASE_URL }}/rest/v1/keep_alive?id=eq.1&select=id"
+      - name: Ping Supabase REST endpoint
+        run: |
+          curl --fail --silent --show-error \
+            --max-time 15 \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/keep_alive?id=eq.1&select=id"
