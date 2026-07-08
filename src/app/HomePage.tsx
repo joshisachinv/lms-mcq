@@ -1,34 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signInAsAdmin, signInAsStudent } from "@/lib/authService";
-import { useToast } from "@/components/ui/ToastProvider";
 
 export default function HomePage() {
-  const toast = useToast();
   const router = useRouter();
-  const [loading, setLoading] = useState<"admin" | "student" | null>(null);
-
-  const enter = async (role: "admin" | "student") => {
-    setLoading(role);
-    try {
-      const { error } =
-        role === "admin" ? await signInAsAdmin() : await signInAsStudent();
-
-      if (error) {
-        console.error(`Auto sign-in failed for ${role}:`, error);
-        toast.error(`Could not open the ${role} area: ${error.message}`);
-        setLoading(null);
-        return;
-      }
-
-      router.push(role === "admin" ? "/admin" : "/student");
-    } catch (err) {
-      console.error("Auto sign-in failed:", err);
-      toast.error("Something went wrong. Please try again.");
-      setLoading(null);
-    }
+  
+  const enter = (role: "admin" | "student") => {
+    router.push(`/login?role=${role}`);
   };
 
   return (
@@ -46,21 +24,19 @@ export default function HomePage() {
 
         <div className="landing-actions">
           <button
-            type="button"
             className="primary-button"
             onClick={() => enter("admin")}
-            disabled={loading !== null}
           >
-            {loading === "admin" ? "Opening..." : "Admin dashboard"}
+            Admin Dashboard
           </button>
+
           <button
-            type="button"
             className="secondary-button"
             onClick={() => enter("student")}
-            disabled={loading !== null}
           >
-            {loading === "student" ? "Opening..." : "Student area"}
+            Student Area
           </button>
+          
         </div>
       </section>
     </main>
